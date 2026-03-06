@@ -10,8 +10,8 @@
 
     html, body {
       background:#262626;
-      min-height:100vh;
-      overflow:hidden;
+      min-height:0;
+      overflow:visible;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-start;
       padding: 0px;
@@ -804,7 +804,9 @@
   function setStatus(msg){ document.getElementById("status").textContent=msg; }
 
   function reportHeight(){
-    window.parent.postMessage({ pokedexHeight: document.getElementById("wrap").scrollHeight + 32 }, "*");
+    var wrap = document.getElementById("wrap");
+    var h = wrap.getBoundingClientRect().bottom + 16;
+    window.parent.postMessage({ pokedexHeight: Math.ceil(h) }, "*");
   }
 
   function loadPokemon(d){
