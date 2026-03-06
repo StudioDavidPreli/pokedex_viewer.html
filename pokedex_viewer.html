@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pokédex viewer</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      background:#0d0d1a; min-height:100vh;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:24px; font-family:monospace; color:#aaa;
+    }
+    #wrap {
+      display:flex; flex-direction:column;
+      align-items:center; gap:10px;
+      width:100%; max-width:500px;
+    }
+    /* ── Controls ── */
+    #controls {
+      display:flex; gap:8px; align-items:center;
+      width:100%; flex-wrap:wrap; justify-content:center;
+    }
+    input[type=date], input[type=time] {
+      background:#0a0a14; border:1px solid #1a1a2e;
+      color:#4ecca3; font-family:monospace; font-size:11px;
+      padding:5px 8px; border-radius:4px; letter-spacing:1px;
+      outline:none; cursor:pointer;
+    }
+    input[type=date]:focus, input[type=time]:focus {
+      border-color:#4ecca3;
+    }
+    /* ── Identity ── */
+    h1    { color:#4ecca3; font-size:13px; letter-spacing:3px; text-transform:uppercase; }
+    #subtitle { font-size:11px; color:#333; letter-spacing:1px; }
+    #clock    { font-size:10px; color:#222; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+    /* ── Canvas ── */
+    #canvasWrap {
+      width: min(500px, calc(100vw - 48px));
+      aspect-ratio: 1 / 1;
+      position: relative;
+      margin-top:2px;
+    }
+    #canvasWrap canvas {
+      width:100% !important; height:100% !important;
+      border-radius:4px; cursor:crosshair; display:block;
+    }
+    #status {
+      font-size:10px; color:#1e1e32; letter-spacing:1px; min-height:14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="controls">
+      <input type="date" id="pickerDate">
+      <input type="time" id="pickerTime" step="1">
+    </div>
+    <h1 id="title">———</h1>
+    <div id="subtitle"></div>
+    <div id="clock"></div>
+    <div id="canvasWrap"></div>
+    <div id="status"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script>
+  'use strict';
+
+  // ── GitHub SVG base URL ──────────────────────────────
+  var REPO = "https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/";
+
+  // ── Pokédex table ────────────────────────────────────
+  var POKEDEX = [
+    [1,"bulbasaur","grass","poison"],[2,"ivysaur","grass","poison"],[3,"venusaur","grass","poison"],
+    [4,"charmander","fire",null],[5,"charmeleon","fire",null],[6,"charizard","fire","flying"],
+    [7,"squirtle","water",null],[8,"wartortle","water",null],[9,"blastoise","water",null],
+    [10,"caterpie","bug",null],[11,"metapod","bug",null],[12,"butterfree","bug","flying"],
+    [13,"weedle","bug","poison"],[14,"kakuna","bug","poison"],[15,"beedrill","bug","poison"],
+    [16,"pidgey","normal","flying"],[17,"pidgeotto","normal","flying"],[18,"pidgeot","normal","flying"],
+    [19,"rattata","normal",null],[20,"raticate","normal",null],[21,"spearow","normal","flying"],
+    [22,"fearow","normal","flying"],[23,"ekans","poison",null],[24,"arbok","poison",null],
+    [25,"pikachu","electric",null],[26,"raichu","electric",null],[27,"sandshrew","ground",null],
+    [28,"sandslash","ground",null],[29,"nidoran_f","poison",null],[30,"nidorina","poison",null],
+    [31,"nidoqueen","poison","ground"],[32,"nidoran_m","poison",null],[33,"nidorino","poison",null],
+    [34,"nidoking","poison","ground"],[35,"clefairy","normal",null],[36,"clefable","normal",null],
+    [37,"vulpix","fire",null],[38,"ninetales","fire",null],[39,"jigglypuff","normal",null],
+    [40,"wigglytuff","normal",null],[41,"zubat","poison","flying"],[42,"golbat","poison","flying"],
+    [43,"oddish","grass","poison"],[44,"gloom","grass","poison"],[45,"vileplume","grass","poison"],
+    [46,"paras","bug","grass"],[47,"parasect","bug","grass"],[48,"venonat","bug","poison"],
+    [49,"venomoth","bug","poison"],[50,"diglett","ground",null],[51,"dugtrio","ground",null],
+    [52,"meowth","normal",null],[53,"persian","normal",null],[54,"psyduck","water",null],
+    [55,"golduck","water",null],[56,"mankey","fighting",null],[57,"primeape","fighting",null],
+    [58,"growlithe","fire",null],[59,"arcanine","fire",null],[60,"poliwag","water",null],
+    [61,"poliwhirl","water",null],[62,"poliwrath","water","fighting"],[63,"abra","psychic",null],
+    [64,"kadabra","psychic",null],[65,"alakazam","psychic",null],[66,"machop","fighting",null],
+    [67,"machoke","fighting",null],[68,"machamp","fighting",null],[69,"bellsprout","grass","poison"],
+    [70,"weepinbell","grass","poison"],[71,"victreebel","grass","poison"],[72,"tentacool","water","poison"],
+    [73,"tentacruel","water","poison"],[74,"geodude","rock","ground"],[75,"graveler","rock","ground"],
+    [76,"golem","rock","ground"],[77,"ponyta","fire",null],[78,"rapidash","fire",null],
+    [79,"slowpoke","water","psychic"],[80,"slowbro","water","psychic"],[81,"magnemite","electric",null],
+    [82,"magneton","electric",null],[83,"farfetchd","normal","flying"],[84,"doduo","normal","flying"],
+    [85,"dodrio","normal","flying"],[86,"seel","water",null],[87,"dewgong","water","ice"],
+    [88,"grimer","poison",null],[89,"muk","poison",null],[90,"shellder","water",null],
+    [91,"cloyster","water","ice"],[92,"gastly","ghost","poison"],[93,"haunter","ghost","poison"],
+    [94,"gengar","ghost","poison"],[95,"onix","rock","ground"],[96,"drowzee","psychic",null],
+    [97,"hypno","psychic",null],[98,"krabby","water",null],[99,"kingler","water",null],
+    [100,"voltorb","electric",null],[101,"electrode","electric",null],[102,"exeggcute","grass","psychic"],
+    [103,"exeggutor","grass","psychic"],[104,"cubone","ground",null],[105,"marowak","ground",null],
+    [106,"hitmonlee","fighting",null],[107,"hitmonchan","fighting",null],[108,"lickitung","normal",null],
+    [109,"koffing","poison",null],[110,"weezing","poison",null],[111,"rhyhorn","ground","rock"],
+    [112,"rhydon","ground","rock"],[113,"chansey","normal",null],[114,"tangela","grass",null],
+    [115,"kangaskhan","normal",null],[116,"horsea","water",null],[117,"seadra","water",null],
+    [118,"goldeen","water",null],[119,"seaking","water",null],[120,"staryu","water",null],
+    [121,"starmie","water","psychic"],[122,"mr_mime","psychic",null],[123,"scyther","bug","flying"],
+    [124,"jynx","ice","psychic"],[125,"electabuzz","electric",null],[126,"magmar","fire",null],
+    [127,"pinsir","bug",null],[128,"tauros","normal",null],[129,"magikarp","water",null],
+    [130,"gyarados","water","flying"],[131,"lapras","water","ice"],[132,"ditto","normal",null],
+    [133,"eevee","normal",null],[134,"vaporeon","water",null],[135,"jolteon","electric",null],
+    [136,"flareon","fire",null],[137,"porygon","normal",null],[138,"omanyte","rock","water"],
+    [139,"omastar","rock","water"],[140,"kabuto","rock","water"],[141,"kabutops","rock","water"],
+    [142,"aerodactyl","rock","flying"],[143,"snorlax","normal",null],[144,"articuno","ice","flying"],
+    [145,"zapdos","electric","flying"],[146,"moltres","fire","flying"],[147,"dratini","dragon",null],
+    [148,"dragonair","dragon",null],[149,"dragonite","dragon","flying"],[150,"mewtwo","psychic",null],
+    [151,"mew","psychic",null]
+  ];
+
+  // ── Date → pokémon lookup ────────────────────────────
+  var START_MS = new Date(2026, 1, 27).getTime(); // Feb 27 2026
+  function dateToPokemon(d){
+    var dayOffset = Math.floor((d.getTime() - START_MS) / 86400000);
+    dayOffset = Math.max(0, Math.min(365, dayOffset));
+    var num = Math.min(151, Math.floor(dayOffset * 150 / 365) + 1);
+    return POKEDEX[num - 1];
+  }
+
+  // ── Mock clock — drives all artwork time functions ───
+  var _mockDate = null;
+  function _now(){ return _mockDate || new Date(); }
+
+  // ── Picker helpers ───────────────────────────────────
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function dateToInputs(d){
+    var yr=d.getFullYear(), mo=pad(d.getMonth()+1), dy=pad(d.getDate());
+    var hh=pad(d.getHours()), mm=pad(d.getMinutes()), ss=pad(d.getSeconds());
+    document.getElementById("pickerDate").value = yr+"-"+mo+"-"+dy;
+    document.getElementById("pickerTime").value = hh+":"+mm+":"+ss;
+  }
+  function inputsToDate(){
+    var dv = document.getElementById("pickerDate").value;
+    var tv = document.getElementById("pickerTime").value || "00:00:00";
+    return new Date(dv + "T" + tv);
+  }
+
+  // ── Live clock display ───────────────────────────────
+  function tickClock(){
+    if(_mockDate) return; // frozen when user has selected a time
+    var now = new Date();
+    var h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
+    var ampm=h<12?"am":"pm", h12=h%12||12;
+    var months=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    var el=document.getElementById("clock");
+    if(el) el.textContent=months[now.getMonth()]+" "+now.getDate()+" "+now.getFullYear()
+                          +" · "+h12+":"+pad(m)+":"+pad(s)+" "+ampm;
+    // Keep picker in sync with real time when live
+    dateToInputs(now);
+    // Re-check if pokémon should change at midnight
+    var expected = dateToPokemon(now);
+    if(expected[0] !== currentNum) loadPokemon(now);
+  }
+  setInterval(tickClock, 1000);
+
+  // ── Sketch state ─────────────────────────────────────
+  var SIZE=500, MARGIN=60, SVG_SIZE=SIZE-MARGIN*2;
+  var svgCX=SIZE/2, svgCY=SIZE/2, svgScale=1.0;
+  var svgImg = new Image();
+  var currentNum = -1;
+  var currentName = "";
+  var TYPE1_NAME="normal", TYPE2_NAME="normal";
+  var POKEDEX_NUM=1, POKEDEX_HUE=0;
+  var TYPE_HUES={
+    normal:[30,40,50],fire:[10,25,40],water:[195,210,225],electric:[50,60,70],
+    grass:[90,110,130],ice:[185,200,215],fighting:[5,15,25],poison:[270,290,310],
+    ground:[25,35,45],flying:[195,210,230],psychic:[320,340,355],bug:[70,85,100],
+    rock:[30,40,50],ghost:[260,275,290],dragon:[230,250,270]
+  };
+
+  // ── Params ───────────────────────────────────────────
+  var params={leafMult:1.0,leafSize:1.0,winterMult:1.0,topo:0.55,topoContrast:1.0,topoScale:0.35};
+  function randomizeParams(){
+    params.leafMult    =lerp(0.25,6.0,Math.random());
+    params.leafSize    =lerp(0.40,2.5,Math.random());
+    params.winterMult  =lerp(0.0, 6.0,Math.random());
+    params.topo        =lerp(0.0, 1.0,Math.random());
+    params.topoContrast=lerp(0.5, 5.0,Math.random());
+    params.topoScale   =lerp(0.0, 1.0,Math.random());
+  }
+  function getSliders(){ return params; }
+
+  function easeOutSine(t)   { return Math.sin(t*Math.PI*0.5); }
+  function easeOutCubic(t)  { return 1-Math.pow(1-t,3); }
+  function easeOutQuart(t)  { return 1-Math.pow(1-t,4); }
+  function easeOutExpo(t)   { return t>=1?1:1-Math.pow(2,-10*t); }
+  function easeInOutSine(t) { return -(Math.cos(Math.PI*t)-1)*0.5; }
+  function lerp(a,b,t)      { return a+(b-a)*t; }
+  function clamp(v,lo,hi)   { return Math.max(lo,Math.min(hi,v)); }
+  function hmod(h)           { return((h%360)+360)%360; }
+  function sleep(ms)         { return new Promise(function(r){setTimeout(r,ms);}); }
+  function mulberry32(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function hashName(n){var h=5381;for(var i=0;i<n.length;i++)h=(Math.imul(h,33)^n.charCodeAt(i))>>>0;return h;}
+  function dotLine(x1,y1,x2,y2,density){
+    var dx=x2-x1,dy=y2-y1,dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<0.5){point(x1,y1);return;}
+    var n=Math.max(1,Math.ceil(dist*density));
+    for(var i=0;i<n;i++){var t=Math.random();point(x1+dx*t+(Math.random()-0.5)*0.8,y1+dy*t+(Math.random()-0.5)*0.8);}
+  }
+  function typeHueSample(t,rng){var h=TYPE_HUES[t]||[0,0,0];return lerp(h[0],h[2],rng());}
+  function blendTypeHue(tb,rng){return lerp(typeHueSample(TYPE1_NAME,rng),typeHueSample(TYPE2_NAME,rng),tb);}
+
+  // ── Seeded draw wrapper ───────────────────────────────
+  // Leaf/winter functions use Math.random() internally for stipple.
+  // Swapping it for a deterministic seed before each draw call
+  // keeps the stipple pattern stable across frames — only angle changes.
+  var _origRandom = Math.random;
+  function _seededDraw(seed, fn) {
+    var _rng = mulberry32(Math.floor(seed * 1000000) ^ 0xdeadbeef);
+    Math.random = _rng;
+    fn();
+    Math.random = _origRandom;
+  }
+
+
+  var TOPO_RES=3, topoMap=null, topoW, topoH;
+  var topoGradX=null, topoGradY=null;
+  var topoNoiseScale;
+
+  function buildTopoMap(rng, scaleParam) {
+    topoW=Math.ceil(SIZE/TOPO_RES); topoH=Math.ceil(SIZE/TOPO_RES);
+    topoMap=new Float32Array(topoW*topoH);
+    var offX=rng()*800, offY=rng()*800;
+    topoNoiseScale=lerp(0.002,0.018,scaleParam);
+    for(var ty=0;ty<topoH;ty++){
+      for(var tx=0;tx<topoW;tx++){
+        var wx=tx*TOPO_RES*topoNoiseScale+offX, wy=ty*TOPO_RES*topoNoiseScale+offY;
+        topoMap[ty*topoW+tx]=noise(wx,wy)*0.58+noise(wx*2.1,wy*2.1)*0.28+noise(wx*4.4,wy*4.4)*0.14;
+      }
+    }
+  }
+
+  function buildTopoGradient() {
+    topoGradX=new Float32Array(topoW*topoH);
+    topoGradY=new Float32Array(topoW*topoH);
+    for(var ty=1;ty<topoH-1;ty++){
+      for(var tx=1;tx<topoW-1;tx++){
+        var i=ty*topoW+tx;
+        topoGradX[i]=topoMap[ty*topoW+(tx+1)]-topoMap[ty*topoW+(tx-1)];
+        topoGradY[i]=topoMap[(ty+1)*topoW+tx]-topoMap[(ty-1)*topoW+tx];
+      }
+    }
+  }
+
+  function getRawTopo(x,y){
+    var tx=clamp(Math.floor(x/TOPO_RES),0,topoW-1);
+    var ty=clamp(Math.floor(y/TOPO_RES),0,topoH-1);
+    return topoMap[ty*topoW+tx];
+  }
+  function getTopoAt(x,y,contrast){
+    return clamp((getRawTopo(x,y)-0.5)*contrast+0.5,0,1);
+  }
+  // Direction along contour = perpendicular to gradient
+  function getContourFlow(x,y){
+    var tx=clamp(Math.floor(x/TOPO_RES),0,topoW-1);
+    var ty=clamp(Math.floor(y/TOPO_RES),0,topoH-1);
+    var gx=topoGradX[ty*topoW+tx], gy=topoGradY[ty*topoW+tx];
+    var len=Math.sqrt(gx*gx+gy*gy)+0.0001;
+    return {vx:-gy/len, vy:gx/len};
+  }
+
+  async function drawTopoBackground(rng,d,tb,ahs,topoStrength,topoContrast){
+    var numLines=Math.floor(SIZE*lerp(0.55,0.90,rng()));
+    var baseDots=lerp(0.06,0.18,rng());
+    var bgOutHueA=hmod(blendTypeHue(tb,rng)+ahs+(rng()-0.5)*18);
+    var bgOutHueB=hmod(blendTypeHue(tb,rng)+ahs+(rng()-0.5)*18);
+    var bgOutSatA=lerp(10,30,d),bgOutSatB=lerp(8,24,d);
+    var bgOutBriA=lerp(6,18,d), bgOutBriB=lerp(10,24,d);
+    var bgInHueA=hmod(blendTypeHue(tb,rng)+ahs+POKEDEX_HUE*0.10+d*15);
+    var bgInHueB=hmod(bgInHueA+lerp(8,20,rng()));
+    var bgInSatA=lerp(14,40,d),bgInSatB=lerp(10,32,d);
+    var bgInBriA=lerp(9,24,d), bgInBriB=lerp(14,30,d);
+    // store for flow mark init
+    _bgHueOut=[bgOutHueA,bgOutHueB]; _bgHueIn=[bgInHueA,bgInHueB];
+    _bgSatOut=bgOutSatA; _bgBriOut=bgOutBriA;
+    _bgSatIn=bgInSatA;   _bgBriIn=bgInBriA;
+    var contourLevels=[0.28,0.36,0.44,0.52,0.60,0.68,0.76];
+    for(var li=0;li<numLines;li++){
+      var y=(li/(numLines-1))*SIZE, lineT=li/(numLines-1);
+      var numDots=Math.floor(SIZE*baseDots);
+      for(var di=0;di<numDots;di++){
+        var x=Math.random()*SIZE;
+        var py=Math.floor(clamp(y,0,SIZE-1)), px=Math.floor(x);
+        var inside=occupied&&occupied[py*SIZE+px]===1;
+        var topo=getTopoAt(x,y,topoContrast);
+        var densThresh=lerp(0.5,lerp(0.15,0.92,topo),topoStrength);
+        if(Math.random()>densThresh) continue;
+        var topoBriMod=lerp(0,lerp(-10,14,topo),topoStrength);
+        var h,s,b;
+        if(inside){h=lerp(bgInHueA,bgInHueB,lineT)+(Math.random()-0.5)*8;s=lerp(bgInSatA,bgInSatB,lineT)+(Math.random()-0.5)*6;b=clamp(lerp(bgInBriA,bgInBriB,lineT)+topoBriMod+(Math.random()-0.5)*4,0,100);}
+        else{h=lerp(bgOutHueA,bgOutHueB,lineT)+(Math.random()-0.5)*8;s=lerp(bgOutSatA,bgOutSatB,lineT)+(Math.random()-0.5)*6;b=clamp(lerp(bgOutBriA,bgOutBriB,lineT)+topoBriMod+(Math.random()-0.5)*4,0,100);}
+        strokeWeight(lerp(0.8,1.6,Math.random()));
+        stroke(hmod(h),clamp(s,0,100),b,88);
+        point(x+(Math.random()-0.5)*1.2,y+(Math.random()-0.5)*3.5);
+      }
+      if(topoStrength>0.05){
+        for(var ci=0;ci<contourLevels.length;ci++){
+          var lv=contourLevels[ci];
+          for(var cx2=4;cx2<SIZE-4;cx2+=8){
+            var t1=getTopoAt(cx2-4,y,topoContrast), t2=getTopoAt(cx2+4,y,topoContrast);
+            if((t1-lv)*(t2-lv)<0){
+              var ins2=occupied&&occupied[Math.floor(clamp(y,0,SIZE-1))*SIZE+cx2]===1;
+              var cBri=ins2?lerp(bgInBriA,bgInBriB,li/numLines)+lerp(4,18,lv):lerp(bgOutBriA,bgOutBriB,li/numLines)+lerp(2,10,lv);
+              var cHue=ins2?hmod(bgInHueA+(Math.random()-0.5)*6):hmod(bgOutHueA+(Math.random()-0.5)*6);
+              var cSat=ins2?lerp(bgInSatA,bgInSatB,li/numLines):lerp(bgOutSatA,bgOutSatB,li/numLines);
+              strokeWeight(lerp(0.5,1.0,Math.random()));
+              stroke(cHue,clamp(cSat,0,100),clamp(cBri,0,100),lerp(0,52,topoStrength)*(0.5+Math.random()*0.5));
+              point(cx2+(Math.random()-0.5)*2.5,y+(Math.random()-0.5)*2.5);
+            }
+          }
+        }
+      }
+      if(li%16===0) await sleep(1);
+    }
+  }
+
+  // Flow marks — drift along contour lines on top of static bg, under leaves
+  var flowMarks=[], _fireflyActive=0, _regularActive=0;
+
+  // ── Bug population schedule ───────────────────────────
+  var BUG_MAX   = 600;
+  var BUG_FLOOR = 27;
+  var FF_NOON   = 0.15;
+  var FF_CREP   = 0.54;
+  var FF_MID    = 0.92;
+
+  function bugDrift(h){ return Math.max(0, Math.sin(Math.PI*h/24)*0.92); }
+  function crepWeight(h){
+    var dawn=Math.exp(-0.5*Math.pow((h-6)/1.4,2));
+    var dusk=Math.exp(-0.5*Math.pow((h-18)/1.4,2));
+    return Math.min(1,Math.max(dawn,dusk));
+  }
+  function fireflyFraction(h){
+    var d=bugDrift(h), c=crepWeight(h);
+    return clamp(lerp(lerp(FF_MID,FF_NOON,d),FF_CREP,c),0,1);
+  }
+  function getBugCounts(h){
+    var total=Math.max(BUG_FLOOR,Math.round(BUG_MAX*bugDrift(h)));
+    var ff=Math.round(total*fireflyFraction(h));
+    return{total:total,ff:ff,reg:total-ff};
+  }
+  function _applyBugGate(counts){
+    var ffSlots=Math.floor(BUG_MAX*0.60);
+    for(var i=0;i<BUG_MAX;i++){
+      var fm=flowMarks[i];
+      if(fm.isFirefly){ fm.active=i<counts.ff; }
+      else{ fm.active=(i-ffSlots)<counts.reg; }
+    }
+  }
+  var _bgHueOut=[0,0],_bgHueIn=[0,0],_bgSatOut=0,_bgBriOut=0,_bgSatIn=0,_bgBriIn=0;
+
+  function initFlowMarks(drift){
+    flowMarks=[];
+    var counts=getBugCounts(getHours());
+    _fireflyActive=counts.ff; _regularActive=counts.reg;
+    for(var i=0;i<BUG_MAX;i++){
+      var x=_origRandom()*SIZE, y=_origRandom()*SIZE;
+      var ins=occupied&&occupied[Math.floor(y)*SIZE+Math.floor(x)]===1;
+      var hArr=ins?_bgHueIn:_bgHueOut;
+      var sat=ins?_bgSatIn:_bgSatOut, bri=ins?_bgBriIn:_bgBriOut;
+      var isFF=(i<BUG_MAX*0.60);
+      var shape=isFF?'firefly':FLY_SHAPES[Math.floor(_origRandom()*FLY_SHAPES.length)];
+      flowMarks.push({
+        x:x, y:y, isFirefly:isFF, shape:shape,
+        spd:       lerp(isFF?0.12:0.20, isFF?0.40:0.60, _origRandom()),
+        hue:       lerp(hArr[0],hArr[1],_origRandom()),
+        sat:       clamp(sat*lerp(0.9,1.5,_origRandom()),0,100),
+        bri:       clamp(bri*lerp(1.2,2.8,_origRandom()),0,100),
+        alpBase:   isFF?lerp(18,40,_origRandom()):lerp(28,55,_origRandom()),
+        alpRange:  isFF?lerp(25,58,_origRandom()):lerp(10,28,_origRandom()),
+        szBase:    isFF?lerp(2.8,6.0,_origRandom()):lerp(1.0,2.2,_origRandom()),
+        szRange:   isFF?lerp(1.2,3.2,_origRandom()):lerp(0.2,0.8,_origRandom()),
+        ns:        _origRandom()*600,
+        nsFlicker: _origRandom()*400,
+        flickerSpd:isFF?lerp(0.014,0.048,_origRandom()):lerp(0.035,0.090,_origRandom()),
+        active:    false,
+      });
+    }
+    _applyBugGate(counts);
+  }
+
+  // ── Regular fly shapes ───────────────────────────────
+  // All orientation-aware: ang = direction of travel
+  function drawFly_dash(x,y,ang,sz,hue,sat,bri,alp){
+    // Motion blur dash — short stroke in travel direction
+    strokeWeight(sz*0.7);
+    stroke(hmod(hue),sat,bri,alp);
+    var len=sz*2.2;
+    point(x,y);
+    strokeWeight(sz*0.45);
+    stroke(hmod(hue),sat,bri,alp*0.5);
+    point(x-Math.cos(ang)*len*0.4, y-Math.sin(ang)*len*0.4);
+    point(x-Math.cos(ang)*len*0.8, y-Math.sin(ang)*len*0.8);
+  }
+  function drawFly_mote(x,y,ang,sz,hue,sat,bri,alp){
+    // Tight 3-dot cluster — reads as small insect body
+    strokeWeight(sz*0.9);
+    stroke(hmod(hue),sat,bri,alp);
+    point(x,y);
+    strokeWeight(sz*0.55);
+    stroke(hmod(hue),sat,bri,alp*0.6);
+    point(x+Math.cos(ang+Math.PI*0.5)*sz*0.55, y+Math.sin(ang+Math.PI*0.5)*sz*0.55);
+    point(x-Math.cos(ang+Math.PI*0.5)*sz*0.55, y-Math.sin(ang+Math.PI*0.5)*sz*0.55);
+  }
+  function drawFly_spark(x,y,ang,sz,hue,sat,bri,alp){
+    // Crossed glint — two short lines at 45°
+    strokeWeight(sz*0.55);
+    stroke(hmod(hue),sat,bri,alp);
+    var r=sz*1.1;
+    point(x+Math.cos(ang)*r,       y+Math.sin(ang)*r);
+    point(x-Math.cos(ang)*r,       y-Math.sin(ang)*r);
+    point(x+Math.cos(ang+Math.PI*0.5)*r*0.7, y+Math.sin(ang+Math.PI*0.5)*r*0.7);
+    point(x-Math.cos(ang+Math.PI*0.5)*r*0.7, y-Math.sin(ang+Math.PI*0.5)*r*0.7);
+  }
+  function drawFly_curl(x,y,ang,sz,hue,sat,bri,alp){
+    // 5-point arc suggesting a beetle in profile
+    strokeWeight(sz*0.65);
+    stroke(hmod(hue),sat,bri,alp);
+    var steps=5;
+    for(var i=0;i<steps;i++){
+      var t=i/(steps-1), a=ang-0.6+t*1.2, r=sz*(0.7+t*0.4);
+      point(x+Math.cos(a)*r, y+Math.sin(a)*r);
+    }
+  }
+  function drawFly_dot(x,y,ang,sz,hue,sat,bri,alp){
+    strokeWeight(sz*1.1);
+    stroke(hmod(hue),sat,bri,alp);
+    point(x,y);
+  }
+
+  var FLY_SHAPES=['dash','mote','spark','curl','dot'];
+
+  function drawRegularFly(fm, curAlp, curSz, ang){
+    switch(fm.shape){
+      case 'dash':  drawFly_dash (fm.x,fm.y,ang,curSz,fm.hue,fm.sat,fm.bri,curAlp); break;
+      case 'mote':  drawFly_mote (fm.x,fm.y,ang,curSz,fm.hue,fm.sat,fm.bri,curAlp); break;
+      case 'spark': drawFly_spark(fm.x,fm.y,ang,curSz,fm.hue,fm.sat,fm.bri,curAlp); break;
+      case 'curl':  drawFly_curl (fm.x,fm.y,ang,curSz,fm.hue,fm.sat,fm.bri,curAlp); break;
+      default:      drawFly_dot  (fm.x,fm.y,ang,curSz,fm.hue,fm.sat,fm.bri,curAlp); break;
+    }
+  }
+
+  function stepFlowMarks(speedScale, topoStrength, topoContrast, ft){
+    if(topoStrength<0.05) return;
+    for(var fi=0;fi<flowMarks.length;fi++){
+      var fm=flowMarks[fi];
+      if(!fm.active) continue;
+
+      var flow=getContourFlow(fm.x,fm.y);
+      var nAng=noise(fm.x/240+fm.ns,fm.y/240+fm.ns*0.7,ft*0.0005)*Math.PI*0.65;
+      var dx=(flow.vx*fm.spd+Math.cos(nAng)*0.40)*speedScale;
+      var dy=(flow.vy*fm.spd+Math.sin(nAng)*0.40)*speedScale;
+      fm.x+=dx; fm.y+=dy;
+      fm.x=((fm.x%SIZE)+SIZE)%SIZE;
+      fm.y=((fm.y%SIZE)+SIZE)%SIZE;
+
+      // Travel angle — used by regular fly shapes for orientation
+      var travelAng = Math.atan2(dy, dx);
+
+      var slowPulse  =noise(fm.nsFlicker,     ft*fm.flickerSpd);
+      var fastShimmer=noise(fm.nsFlicker*3.1, ft*fm.flickerSpd*4.5);
+      var pulse=Math.pow(lerp(slowPulse,fastShimmer,0.28),1.6);
+      var curAlp=fm.alpBase+fm.alpRange*pulse;
+      var curSz =fm.szBase +fm.szRange *pulse;
+
+      if(fm.isFirefly){
+        // Three-layer glow
+        strokeWeight(curSz*2.8);
+        stroke(hmod(fm.hue),fm.sat*0.5,fm.bri,curAlp*0.14);
+        point(fm.x,fm.y);
+        strokeWeight(curSz*1.6);
+        stroke(hmod(fm.hue),fm.sat*0.75,fm.bri,curAlp*0.28);
+        point(fm.x,fm.y);
+        strokeWeight(curSz);
+        stroke(hmod(fm.hue),fm.sat,fm.bri,curAlp);
+        point(fm.x,fm.y);
+      } else {
+        // Shape-based regular fly, oriented to travel direction
+        drawRegularFly(fm, curAlp, curSz, travelAng);
+      }
+    }
+  }
+
+
+  function drawLeaf_grass(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(3,Math.floor(len/3.0));strokeWeight(wt);for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.5?t*2:(1-t)*2,w=wid*easeOutCubic(u);if(w<0.3)continue;var sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*10),sat,clamp(bri+t*8,0,100),clamp(alp*(1-t*0.3),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.55);}}
+  function drawLeaf_poison(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(3,Math.floor(len/2.5));strokeWeight(wt);for(var s=0;s<=steps;s++){var t=s/steps,bulge=t<0.4?easeOutCubic(t/0.4):Math.max(0,1-easeOutExpo((t-0.4)/0.6)),w=wid*bulge;if(w<0.2)continue;var off=Math.sin(t*Math.PI)*wid*0.28,sx=x+Math.cos(ang)*len*t+Math.cos(perp)*off,sy=y+Math.sin(ang)*len*t+Math.sin(perp)*off;stroke(hmod(hue+t*18),clamp(sat+t*8,0,100),clamp(bri,0,100),clamp(alp*(1-t*0.22),0,100));dotLine(sx+Math.cos(perp)*w*0.6,sy+Math.sin(perp)*w*0.6,sx-Math.cos(perp)*w*1.4,sy-Math.sin(perp)*w*1.4,0.50);}}
+  function drawLeaf_bug(x,y,ang,len,wid,wt,hue,sat,bri,alp){var lobes=Math.max(2,Math.round(len/wid*0.9+1));strokeWeight(wt);for(var i=0;i<lobes;i++){var t=(i+0.5)/lobes,r=wid*easeOutCubic(t<0.5?t*2:(1-t)*2)*0.75;if(r<1)continue;var cx2=x+Math.cos(ang)*len*t,cy2=y+Math.sin(ang)*len*t,dc=Math.max(4,Math.floor(Math.PI*r*r*0.28));stroke(hmod(hue+i*9),sat,clamp(bri+i*4,0,100),clamp(alp*0.88,0,100));for(var di=0;di<dc;di++){var a2=Math.random()*Math.PI*2,r2=Math.sqrt(Math.random())*r;point(cx2+Math.cos(a2)*r2+(Math.random()-0.5)*1.2,cy2+Math.sin(a2)*r2+(Math.random()-0.5)*1.2);}}}
+  function drawLeaf_flying(x,y,ang,len,wid,wt,hue,sat,bri,alp){var steps=Math.max(6,Math.floor(len/3.5));strokeWeight(wt*0.55);stroke(hmod(hue),sat*0.65,bri*0.9,alp*0.5);dotLine(x,y,x+Math.cos(ang)*len,y+Math.sin(ang)*len,0.22);for(var s=1;s<steps;s++){var t=s/steps,bLen=wid*easeOutCubic(t<0.7?t/0.7:(1-t)/0.3)*(1-t*0.35);if(bLen<0.8)continue;var sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;strokeWeight(wt*0.45);stroke(hmod(hue+t*10),sat*0.78,clamp(bri+12,0,100),clamp(alp*(1-t*0.42),0,100));dotLine(sx,sy,sx+Math.cos(ang+Math.PI*0.5+0.32)*bLen,sy+Math.sin(ang+Math.PI*0.5+0.32)*bLen,0.18);dotLine(sx,sy,sx+Math.cos(ang-Math.PI*0.5-0.32)*bLen,sy+Math.sin(ang-Math.PI*0.5-0.32)*bLen,0.18);}}
+  function drawLeaf_ground(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(2,Math.floor(len/2.0));strokeWeight(wt*1.3);for(var s=0;s<=steps;s++){var t=s/steps,w=wid*lerp(1.0,0.72,t),sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*5),sat,clamp(bri-t*10,0,100),clamp(alp*(1-t*0.18),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.72);}}
+  function drawLeaf_fire(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(4,Math.floor(len/2.0));strokeWeight(wt*0.65);for(var s=0;s<=steps;s++){var t=s/steps,w=wid*(1-easeOutExpo(t));if(w<0.2)continue;var jag=(Math.random()-0.5)*w*0.9,sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*22),clamp(sat+t*12,0,100),clamp(bri+t*18,0,100),clamp(alp*(1-t*0.52),0,100));dotLine(sx+Math.cos(perp)*(w+jag),sy+Math.sin(perp)*(w+jag),sx-Math.cos(perp)*(w-jag),sy-Math.sin(perp)*(w-jag),0.28);}}
+  function drawLeaf_water(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(3,Math.floor(len/3.2));strokeWeight(wt*1.1);for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.32?t/0.32:(1-t)/0.68,w=wid*easeOutQuart(u);if(w<0.3)continue;var sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*7),clamp(sat-t*5,0,100),clamp(bri+t*6,0,100),clamp(alp*(1-t*0.22),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.62);}}
+  function drawLeaf_ghost(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(6,Math.floor(len/3.0)),waveAcc=0;strokeWeight(wt*0.5);for(var s=0;s<=steps;s++){var t=s/steps,w=wid*Math.max(0,1-easeOutCubic(t)*0.9);if(w<0.15)continue;waveAcc+=(Math.random()-0.5)*0.14;var sx=x+Math.cos(ang)*len*t+Math.cos(perp)*waveAcc*wid*2,sy=y+Math.sin(ang)*len*t+Math.sin(perp)*waveAcc*wid*2;stroke(hmod(hue+t*22),clamp(sat-t*22,0,100),clamp(bri+t*12,0,100),clamp(alp*(1-t*0.88),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.22);}}
+  function drawLeaf_electric(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,bx1=x+Math.cos(perp)*wid,by1=y+Math.sin(perp)*wid,bx2=x-Math.cos(perp)*wid*0.7,by2=y-Math.sin(perp)*wid*0.7,tx2=x+Math.cos(ang)*len,ty2=y+Math.sin(ang)*len,mx=x+Math.cos(ang)*len*0.52+Math.cos(perp)*wid*0.55,my=y+Math.sin(ang)*len*0.52+Math.sin(perp)*wid*0.55;strokeWeight(wt*0.9);var dc=Math.max(6,Math.floor(len*wid*0.20));for(var di=0;di<dc;di++){var r1=Math.sqrt(Math.random()),r2=Math.random(),px3,py3;if(Math.random()<0.5){px3=(1-r1)*bx1+r1*(1-r2)*bx2+r1*r2*mx;py3=(1-r1)*by1+r1*(1-r2)*by2+r1*r2*my;}else{px3=(1-r1)*mx+r1*(1-r2)*bx2+r1*r2*tx2;py3=(1-r1)*my+r1*(1-r2)*by2+r1*r2*ty2;}stroke(hmod(hue+(Math.random()-0.5)*14),sat,clamp(bri+(Math.random()-0.5)*16,0,100),clamp(alp*0.88,0,100));point(px3,py3);}}
+  function drawLeaf_psychic(x,y,ang,len,wid,wt,hue,sat,bri,alp){var turns=lerp(1.4,2.8,Math.random()),steps=Math.max(40,Math.floor(len*2.2));strokeWeight(wt*0.55);for(var s=0;s<steps;s++){var t=s/steps,sa=ang+t*turns*Math.PI*2,r=wid*easeOutCubic(Math.min(t*3,1))*(1-t*0.55),sx=x+Math.cos(ang)*len*t*0.38+Math.cos(sa)*r,sy=y+Math.sin(ang)*len*t*0.38+Math.sin(sa)*r;stroke(hmod(hue+t*45),clamp(sat+t*12,0,100),clamp(bri+t*8,0,100),clamp(alp*(1-t*0.42),0,100));point(sx+(Math.random()-0.5)*1.4,sy+(Math.random()-0.5)*1.4);}}
+  function drawLeaf_ice(x,y,ang,len,wid,wt,hue,sat,bri,alp){var branches=Math.max(2,Math.floor(len/wid*0.8));strokeWeight(wt*0.55);stroke(hmod(hue),clamp(sat-12,0,100),clamp(bri+14,0,100),alp);dotLine(x,y,x+Math.cos(ang)*len,y+Math.sin(ang)*len,0.32);for(var i=0;i<branches;i++){var t=(i+1)/(branches+1),bx3=x+Math.cos(ang)*len*t,by3=y+Math.sin(ang)*len*t,bLen=wid*(1-t*0.45);if(bLen<1.5)continue;stroke(hmod(hue+6),clamp(sat-18,0,100),clamp(bri+18,0,100),clamp(alp*(1-t*0.28),0,100));dotLine(bx3,by3,bx3+Math.cos(ang+Math.PI*0.5-0.38)*bLen,by3+Math.sin(ang+Math.PI*0.5-0.38)*bLen,0.28);dotLine(bx3,by3,bx3+Math.cos(ang-Math.PI*0.5+0.38)*bLen,by3+Math.sin(ang-Math.PI*0.5+0.38)*bLen,0.28);}}
+  function drawLeaf_rock(x,y,ang,len,wid,wt,hue,sat,bri,alp){var cx3=x+Math.cos(ang)*len*0.42,cy3=y+Math.sin(ang)*len*0.42;strokeWeight(wt*1.1);var dc=Math.max(8,Math.floor(len*wid*0.24));for(var di=0;di<dc;di++){var r=Math.sqrt(Math.random())*wid*0.92,a=Math.random()*Math.PI*2;stroke(hmod(hue+(Math.random()-0.5)*10),clamp(sat-8,0,100),clamp(bri+(Math.random()-0.5)*10,0,100),clamp(alp*0.92,0,100));point(cx3+Math.cos(a)*r+(Math.random()-0.5)*3,cy3+Math.sin(a)*r+(Math.random()-0.5)*3);}}
+  function drawLeaf_normal(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(3,Math.floor(len/3.5));strokeWeight(wt);for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.5?t*2:(1-t)*2,w=wid*easeInOutSine(u);if(w<0.3)continue;var sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*7),sat,clamp(bri+t*5,0,100),clamp(alp*(1-t*0.28),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.50);}}
+  function drawLeaf_fighting(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(3,Math.floor(len/2.0));strokeWeight(wt*1.4);for(var s=0;s<=steps;s++){var t=s/steps,w=t<0.68?wid*easeOutCubic(t/0.68):wid*lerp(1.0,0.88,(t-0.68)/0.32),sx=x+Math.cos(ang)*len*t,sy=y+Math.sin(ang)*len*t;stroke(hmod(hue+t*5),clamp(sat+6,0,100),clamp(bri-t*12,0,100),clamp(alp*(1-t*0.14),0,100));dotLine(sx+Math.cos(perp)*w,sy+Math.sin(perp)*w,sx-Math.cos(perp)*w,sy-Math.sin(perp)*w,0.74);}}
+  function drawLeaf_dragon(x,y,ang,len,wid,wt,hue,sat,bri,alp){var perp=ang+Math.PI*0.5,steps=Math.max(4,Math.floor(len/2.6)),curv=lerp(0.18,0.42,Math.random());strokeWeight(wt);for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.38?t/0.38:(1-t)/0.62,mainW=wid*easeOutCubic(u);if(mainW<0.25)continue;var co=Math.sin(t*Math.PI)*len*curv,sx=x+Math.cos(ang)*len*t+Math.cos(perp)*co,sy=y+Math.sin(ang)*len*t+Math.sin(perp)*co;stroke(hmod(hue+t*20),clamp(sat+t*8,0,100),clamp(bri+t*6,0,100),clamp(alp*(1-t*0.32),0,100));dotLine(sx+Math.cos(perp)*mainW*1.45,sy+Math.sin(perp)*mainW*1.45,sx-Math.cos(perp)*mainW*0.55,sy-Math.sin(perp)*mainW*0.55,0.48);}}
+  function drawTypedLeaf(tn,x,y,a,l,w,wt,h,s,b,al){switch(tn){case 'grass':drawLeaf_grass(x,y,a,l,w,wt,h,s,b,al);break;case 'poison':drawLeaf_poison(x,y,a,l,w,wt,h,s,b,al);break;case 'bug':drawLeaf_bug(x,y,a,l,w,wt,h,s,b,al);break;case 'flying':drawLeaf_flying(x,y,a,l,w,wt,h,s,b,al);break;case 'ground':drawLeaf_ground(x,y,a,l,w,wt,h,s,b,al);break;case 'fire':drawLeaf_fire(x,y,a,l,w,wt,h,s,b,al);break;case 'water':drawLeaf_water(x,y,a,l,w,wt,h,s,b,al);break;case 'ghost':drawLeaf_ghost(x,y,a,l,w,wt,h,s,b,al);break;case 'electric':drawLeaf_electric(x,y,a,l,w,wt,h,s,b,al);break;case 'psychic':drawLeaf_psychic(x,y,a,l,w,wt,h,s,b,al);break;case 'ice':drawLeaf_ice(x,y,a,l,w,wt,h,s,b,al);break;case 'rock':drawLeaf_rock(x,y,a,l,w,wt,h,s,b,al);break;case 'normal':drawLeaf_normal(x,y,a,l,w,wt,h,s,b,al);break;case 'fighting':drawLeaf_fighting(x,y,a,l,w,wt,h,s,b,al);break;case 'dragon':drawLeaf_dragon(x,y,a,l,w,wt,h,s,b,al);break;default:drawLeaf_normal(x,y,a,l,w,wt,h,s,b,al);}}
+
+
+  function drawWinter_grass(x,y,ang,sz,hue,sat,bri,alp){var blades=Math.floor(lerp(5,9,Math.random())),spread=lerp(0.35,0.65,Math.random());strokeWeight(lerp(0.6,1.1,Math.random()));for(var i=0;i<blades;i++){var t=i/(blades-1),ba=ang+lerp(-spread,spread,t)+(Math.random()-0.5)*0.12,bl=sz*lerp(0.55,1.0,Math.random());stroke(hmod(hue+i*6),sat,clamp(bri+i*3,0,100),clamp(alp*(1-t*0.2),0,100));dotLine(x,y,x+Math.cos(ba)*bl,y+Math.sin(ba)*bl,0.45);}}
+  function drawWinter_bug(x,y,ang,sz,hue,sat,bri,alp){var pods=Math.floor(lerp(3,6,Math.random()));strokeWeight(0.7);for(var i=0;i<pods;i++){var pa=ang+(Math.random()-0.5)*0.9,pd=sz*lerp(0.3,0.9,Math.random()),px4=x+Math.cos(pa)*pd,py4=y+Math.sin(pa)*pd,pr=sz*lerp(0.18,0.45,Math.random()),dc=Math.max(5,Math.floor(Math.PI*pr*pr*0.55));stroke(hmod(hue+i*8),sat,clamp(bri,0,100),clamp(alp*0.9,0,100));for(var di=0;di<dc;di++){var a2=Math.random()*Math.PI*2,r2=Math.sqrt(Math.random())*pr;point(px4+Math.cos(a2)*r2*1.6,py4+Math.sin(a2)*r2*0.7);}}}
+  function drawWinter_poison(x,y,ang,sz,hue,sat,bri,alp){var steps=18,curAng=ang,cx4=x,cy4=y;strokeWeight(lerp(0.8,1.4,Math.random()));for(var i=0;i<steps;i++){var t=i/steps;curAng+=0.06+(Math.random()-0.5)*0.08;var segLen=sz/steps*lerp(0.8,1.2,Math.random()),nx2=cx4+Math.cos(curAng)*segLen,ny2=cy4+Math.sin(curAng)*segLen,w2=t<0.8?sz*0.12:sz*lerp(0.12,0.35,(t-0.8)/0.2);stroke(hmod(hue+t*20),clamp(sat+t*8,0,100),clamp(bri,0,100),clamp(alp*(1-t*0.15),0,100));dotLine(cx4,cy4,nx2,ny2,0.48);if(t>0.75){var perp2=curAng+Math.PI*0.5;dotLine(nx2+Math.cos(perp2)*w2,ny2+Math.sin(perp2)*w2,nx2-Math.cos(perp2)*w2,ny2-Math.sin(perp2)*w2,0.52);}cx4=nx2;cy4=ny2;}}
+  function drawWinter_ghost(x,y,ang,sz,hue,sat,bri,alp){var steps=22,waveAcc=0,cx5=x,cy5=y;strokeWeight(0.55);for(var i=0;i<steps;i++){var t=i/steps;waveAcc+=(Math.random()-0.5)*0.18;var perp3=ang+Math.PI*0.5,nx3=cx5+Math.cos(ang)*sz/steps+Math.cos(perp3)*waveAcc*sz*0.18,ny3=cy5+Math.sin(ang)*sz/steps+Math.sin(perp3)*waveAcc*sz*0.18;stroke(hmod(hue+t*25),clamp(sat-t*20,0,100),clamp(bri+t*10,0,100),clamp(alp*(1-t*0.82),0,100));dotLine(cx5,cy5,nx3,ny3,0.28);cx5=nx3;cy5=ny3;}}
+  function drawWinter_fire(x,y,ang,sz,hue,sat,bri,alp){var thorns=Math.floor(lerp(5,9,Math.random())),spread=lerp(0.5,1.0,Math.random());strokeWeight(0.6);for(var i=0;i<thorns;i++){var t=i/(thorns-1),ta=ang+lerp(-spread,spread,t)+(Math.random()-0.5)*0.1,tl=sz*lerp(0.4,1.0,Math.random());stroke(hmod(hue+t*18),clamp(sat+8,0,100),clamp(bri+t*14,0,100),clamp(alp*(1-t*0.3),0,100));for(var s=0;s<6;s++){var st=s/6,w3=sz*0.055*(1-easeOutExpo(st)),sx2=x+Math.cos(ta)*tl*st,sy2=y+Math.sin(ta)*tl*st,perp4=ta+Math.PI*0.5;if(w3>0.2)dotLine(sx2+Math.cos(perp4)*w3,sy2+Math.sin(perp4)*w3,sx2-Math.cos(perp4)*w3,sy2-Math.sin(perp4)*w3,0.32);}}}
+  function drawWinter_electric(x,y,ang,sz,hue,sat,bri,alp){var forkT=lerp(0.55,0.75,Math.random()),forkA=lerp(0.35,0.65,Math.random());strokeWeight(lerp(0.9,1.4,Math.random()));var mx2=x+Math.cos(ang)*sz*forkT,my2=y+Math.sin(ang)*sz*forkT,rem=sz*(1-forkT);stroke(hmod(hue),sat,bri,alp);dotLine(x,y,mx2,my2,0.50);stroke(hmod(hue+12),sat,clamp(bri+8,0,100),clamp(alp*0.82,0,100));dotLine(mx2,my2,mx2+Math.cos(ang+forkA)*rem,my2+Math.sin(ang+forkA)*rem,0.45);dotLine(mx2,my2,mx2+Math.cos(ang-forkA)*rem,my2+Math.sin(ang-forkA)*rem,0.45);if(Math.random()<0.4){var fT2=lerp(0.3,0.6,Math.random()),fx2=x+Math.cos(ang)*sz*fT2,fy2=y+Math.sin(ang)*sz*fT2,fa2=ang+lerp(0.4,0.8,Math.random())*(Math.random()<0.5?1:-1);stroke(hmod(hue+22),sat,clamp(bri+14,0,100),clamp(alp*0.6,0,100));dotLine(fx2,fy2,fx2+Math.cos(fa2)*sz*0.28,fy2+Math.sin(fa2)*sz*0.28,0.38);}}
+  function drawWinter_water(x,y,ang,sz,hue,sat,bri,alp){var rx=sz*lerp(0.7,1.1,Math.random()),ry=sz*lerp(0.45,0.72,Math.random()),dc=Math.max(18,Math.floor(rx*ry*0.65));strokeWeight(0.7);for(var di=0;di<dc;di++){var r2=Math.sqrt(Math.random()),a2=Math.random()*Math.PI*2;stroke(hmod(hue+(Math.random()-0.5)*10),clamp(sat-4,0,100),clamp(bri+(Math.random()-0.5)*8,0,100),clamp(alp*(0.55+r2*0.45),0,100));point(x+Math.cos(a2)*rx*r2,y+Math.sin(a2)*ry*r2);}}
+  function drawWinter_ice(x,y,ang,sz,hue,sat,bri,alp){var branches=Math.floor(lerp(3,6,Math.random()));strokeWeight(0.55);stroke(hmod(hue),clamp(sat-14,0,100),clamp(bri+16,0,100),alp);dotLine(x,y,x+Math.cos(ang)*sz,y+Math.sin(ang)*sz,0.35);for(var i=0;i<branches;i++){var t=(i+1)/(branches+1),bx4=x+Math.cos(ang)*sz*t,by4=y+Math.sin(ang)*sz*t,bLen2=sz*lerp(0.18,0.38,Math.random())*(1-t*0.3);stroke(hmod(hue+8),clamp(sat-20,0,100),clamp(bri+20,0,100),clamp(alp*(1-t*0.25),0,100));dotLine(bx4,by4,bx4+Math.cos(ang+Math.PI*0.5-0.3)*bLen2,by4+Math.sin(ang+Math.PI*0.5-0.3)*bLen2,0.30);dotLine(bx4,by4,bx4+Math.cos(ang-Math.PI*0.5+0.3)*bLen2,by4+Math.sin(ang-Math.PI*0.5+0.3)*bLen2,0.30);}}
+  function drawWinter_flying(x,y,ang,sz,hue,sat,bri,alp){var qLen=sz*lerp(0.7,1.0,Math.random()),barbs=Math.floor(lerp(3,6,Math.random()));strokeWeight(0.65);stroke(hmod(hue),sat*0.7,bri,alp*0.55);dotLine(x,y,x+Math.cos(ang)*qLen,y+Math.sin(ang)*qLen,0.25);for(var i=0;i<barbs;i++){var t=(i+1)/(barbs+1),bx5=x+Math.cos(ang)*qLen*t,by5=y+Math.sin(ang)*qLen*t,bl=sz*lerp(0.12,0.28,Math.random())*(1-t*0.4);strokeWeight(0.42);stroke(hmod(hue+t*8),sat*0.72,clamp(bri+10,0,100),clamp(alp*(1-t*0.38)*0.68,0,100));dotLine(bx5,by5,bx5+Math.cos(ang+Math.PI*0.5+0.28)*bl,by5+Math.sin(ang+Math.PI*0.5+0.28)*bl,0.18);dotLine(bx5,by5,bx5+Math.cos(ang-Math.PI*0.5-0.28)*bl,by5+Math.sin(ang-Math.PI*0.5-0.28)*bl,0.18);strokeWeight(0.65);}}
+  function drawWinter_ground(x,y,ang,sz,hue,sat,bri,alp){var rx2=sz*lerp(0.9,1.4,Math.random()),ry2=sz*lerp(0.35,0.55,Math.random()),dc2=Math.max(22,Math.floor(rx2*ry2*0.82));strokeWeight(lerp(1.0,1.8,Math.random()));for(var di=0;di<dc2;di++){var r2=Math.sqrt(Math.random()),a2=Math.random()*Math.PI*2,jit=(1-r2)*sz*0.18;stroke(hmod(hue+(Math.random()-0.5)*8),clamp(sat-6,0,100),clamp(bri-Math.random()*12,0,100),clamp(alp*(0.6+r2*0.4),0,100));point(x+Math.cos(a2)*rx2*r2+(Math.random()-0.5)*jit,y+Math.sin(a2)*ry2*r2+(Math.random()-0.5)*jit*0.4);}}
+  function drawWinter_rock(x,y,ang,sz,hue,sat,bri,alp){var dc3=Math.max(20,Math.floor(sz*sz*0.72));strokeWeight(lerp(0.8,1.4,Math.random()));for(var di=0;di<dc3;di++){var r2=Math.sqrt(Math.random()),a3=Math.random()*Math.PI*2,px5=x+Math.cos(a3)*sz*r2*0.88,py5=y+Math.sin(a3)*sz*r2*0.72;stroke(hmod(hue+(Math.random()-0.5)*12),clamp(sat-10,0,100),clamp(bri+(Math.random()-0.5)*12,0,100),clamp(alp*(0.5+r2*0.5),0,100));point(px5+(Math.random()-0.5)*2.5,py5+(Math.random()-0.5)*2.5);}}
+  function drawWinter_fighting(x,y,ang,sz,hue,sat,bri,alp){var tLen=sz*lerp(0.45,0.65,Math.random()),forkA2=lerp(0.40,0.72,Math.random()),rLen=sz*lerp(0.3,0.55,Math.random());strokeWeight(lerp(1.2,2.0,Math.random()));stroke(hmod(hue),sat,bri,alp);var fx3=x+Math.cos(ang)*tLen,fy3=y+Math.sin(ang)*tLen;dotLine(x,y,fx3,fy3,0.62);strokeWeight(lerp(0.9,1.5,Math.random()));stroke(hmod(hue+8),sat,clamp(bri-6,0,100),clamp(alp*0.85,0,100));dotLine(fx3,fy3,fx3+Math.cos(ang+forkA2)*rLen,fy3+Math.sin(ang+forkA2)*rLen,0.55);dotLine(fx3,fy3,fx3+Math.cos(ang-forkA2)*rLen,fy3+Math.sin(ang-forkA2)*rLen,0.55);}
+  function drawWinter_normal(x,y,ang,sz,hue,sat,bri,alp){var perp5=ang+Math.PI*0.5,steps=Math.max(5,Math.floor(sz/2.2));strokeWeight(lerp(0.7,1.2,Math.random()));for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.5?t*2:(1-t)*2,w4=sz*0.38*easeInOutSine(u);if(w4<0.25)continue;var sx3=x+Math.cos(ang)*sz*t,sy3=y+Math.sin(ang)*sz*t;stroke(hmod(hue+t*8),sat,clamp(bri+t*4,0,100),clamp(alp*(1-t*0.25),0,100));dotLine(sx3+Math.cos(perp5)*w4,sy3+Math.sin(perp5)*w4,sx3-Math.cos(perp5)*w4,sy3-Math.sin(perp5)*w4,0.48);}}
+  function drawWinter_psychic(x,y,ang,sz,hue,sat,bri,alp){var turns=lerp(1.2,2.2,Math.random()),steps=Math.max(30,Math.floor(sz*3.5));strokeWeight(0.6);for(var s=0;s<steps;s++){var t=s/steps,sa=ang+t*turns*Math.PI*2,r3=sz*0.42*easeOutCubic(Math.min(t*2.5,1))*(1-t*0.7),adv=sz*0.32*t;stroke(hmod(hue+t*35),clamp(sat+t*10,0,100),clamp(bri+t*6,0,100),clamp(alp*(1-t*0.55),0,100));point(x+Math.cos(ang)*adv+Math.cos(sa)*r3+(Math.random()-0.5)*1.0,y+Math.sin(ang)*adv+Math.sin(sa)*r3+(Math.random()-0.5)*1.0);}}
+  function drawWinter_dragon(x,y,ang,sz,hue,sat,bri,alp){var perp6=ang+Math.PI*0.5,curv2=lerp(0.22,0.48,Math.random())*(Math.random()<0.5?1:-1),steps=Math.max(5,Math.floor(sz/2.0));strokeWeight(lerp(0.8,1.3,Math.random()));for(var s=0;s<=steps;s++){var t=s/steps,u=t<0.32?t/0.32:(1-t)/0.68,mW=sz*0.32*easeOutCubic(u);if(mW<0.2)continue;var co2=Math.sin(t*Math.PI)*sz*curv2,sx4=x+Math.cos(ang)*sz*t+Math.cos(perp6)*co2,sy4=y+Math.sin(ang)*sz*t+Math.sin(perp6)*co2;stroke(hmod(hue+t*16),clamp(sat+t*6,0,100),clamp(bri+t*5,0,100),clamp(alp*(1-t*0.30),0,100));dotLine(sx4+Math.cos(perp6)*mW*1.4,sy4+Math.sin(perp6)*mW*1.4,sx4-Math.cos(perp6)*mW*0.6,sy4-Math.sin(perp6)*mW*0.6,0.46);}}
+  function drawAmbientShape(tn,x,y,ang,sz,hue,sat,bri,alp){switch(tn){case 'grass':drawWinter_grass(x,y,ang,sz,hue,sat,bri,alp);break;case 'bug':drawWinter_bug(x,y,ang,sz,hue,sat,bri,alp);break;case 'poison':drawWinter_poison(x,y,ang,sz,hue,sat,bri,alp);break;case 'ghost':drawWinter_ghost(x,y,ang,sz,hue,sat,bri,alp);break;case 'fire':drawWinter_fire(x,y,ang,sz,hue,sat,bri,alp);break;case 'electric':drawWinter_electric(x,y,ang,sz,hue,sat,bri,alp);break;case 'water':drawWinter_water(x,y,ang,sz,hue,sat,bri,alp);break;case 'ice':drawWinter_ice(x,y,ang,sz,hue,sat,bri,alp);break;case 'flying':drawWinter_flying(x,y,ang,sz,hue,sat,bri,alp);break;case 'ground':drawWinter_ground(x,y,ang,sz,hue,sat,bri,alp);break;case 'rock':drawWinter_rock(x,y,ang,sz,hue,sat,bri,alp);break;case 'fighting':drawWinter_fighting(x,y,ang,sz,hue,sat,bri,alp);break;case 'normal':drawWinter_normal(x,y,ang,sz,hue,sat,bri,alp);break;case 'psychic':drawWinter_psychic(x,y,ang,sz,hue,sat,bri,alp);break;case 'dragon':drawWinter_dragon(x,y,ang,sz,hue,sat,bri,alp);break;default:drawWinter_normal(x,y,ang,sz,hue,sat,bri,alp);}}
+
+  function populateWinterData(rng,drift,sm,ahs,winterMult){
+    var winterStrength=clamp((0.80-sm)/0.70,0,1);
+    if(winterStrength<0.02&&winterMult<1.05) return;
+    var ws=clamp(winterStrength*winterMult,0,1.0);
+    var t1h=TYPE_HUES[TYPE1_NAME]||[90,110,130],t2h=TYPE_HUES[TYPE2_NAME]||[270,290,310];
+    var extCount=Math.floor(lerp(0,560,ws)*lerp(0.7,1.0,rng())*winterMult);
+    var intCount=Math.floor(lerp(0,240,ws)*lerp(0.6,1.0,rng())*winterMult);
+    var baseAlp=lerp(28,70,ws), baseSize=lerp(4.0,14.0,rng());
+    for(var i=0;i<extCount;i++){
+      var idx=Math.floor(rng()*edgePixels.length),ep=edgePixels[idx],th=thickness[idx];
+      var outAng=normals[idx],dist=lerp(3,22,rng())*lerp(0.4,1.0,th);
+      var px=clamp(ep[0]+Math.cos(outAng)*dist,1,SIZE-2),py=clamp(ep[1]+Math.sin(outAng)*dist,1,SIZE-2);
+      var hue=hmod(lerp(t1h[0],t1h[2],rng())+ahs+(rng()-0.5)*18);
+      var sz=baseSize*lerp(0.45,1.8,rng())*lerp(0.35,1.0,th);
+      winterData.push({type:TYPE1_NAME,x:px,y:py,ang:normals[idx]+(rng()-0.5)*lerp(0.28,0.85,drift),sz:sz,h:hue,s:lerp(20,50,drift),b:lerp(22,55,rng()),a:baseAlp*lerp(0.45,1.0,rng()),ns:rng()*800});
+    }
+    for(var j=0;j<intCount;j++){
+      var idx2=Math.floor(rng()*edgePixels.length),ep2=edgePixels[idx2],th2=thickness[idx2];
+      var inAng=normals[idx2]+Math.PI,dist2=lerp(2,16,rng())*lerp(0.25,1.0,th2);
+      var px2=clamp(ep2[0]+Math.cos(inAng)*dist2,1,SIZE-2),py2=clamp(ep2[1]+Math.sin(inAng)*dist2,1,SIZE-2);
+      var hue2=hmod(lerp(t2h[0],t2h[2],rng())+ahs+(rng()-0.5)*18);
+      var sz2=baseSize*lerp(0.32,1.4,rng())*lerp(0.25,1.0,th2);
+      winterData.push({type:TYPE2_NAME,x:px2,y:py2,ang:inAng+(rng()-0.5)*lerp(0.25,0.78,drift),sz:sz2,h:hue2,s:lerp(16,42,drift),b:lerp(18,46,rng()),a:baseAlp*lerp(0.35,0.88,rng()),ns:rng()*800});
+    }
+  }
+
+
+  // ── Animation state ──────────────────────────────────
+  // bgImage: static p5.Image of the bg layer, redrawn under leaves each frame.
+  // leafData / winterData: arrays of element params, redrawn each frame with sway.
+  // Flow marks drift along topo contour lines between bg and leaves.
+
+  var bgImage   = null;
+  var leafData  = [];
+  var winterData= [];
+  var built     = false;
+  var frameT    = 0;
+
+  // Per-type sway amplitude (radians). Heavier types barely move.
+  var TYPE_SWAY = {
+    grass:0.52, bug:0.16, poison:0.38, ghost:0.65, fire:0.32,
+    electric:0.28, water:0.12, ice:0.18, flying:0.58, ground:0.06,
+    rock:0.06, fighting:0.12, normal:0.42, psychic:0.36, dragon:0.22
+  };
+
+  function swayAmt(typeName){ return TYPE_SWAY[typeName]||0.08; }
+
+  // Animate one frame — called by draw()
+  function animateFrame(){
+    if(!built) return;
+
+    var sl = getSliders();
+    var drift = getDrift();
+    var _bugCounts=getBugCounts(getHours());
+    if(_bugCounts.ff!==_fireflyActive||_bugCounts.reg!==_regularActive){
+      _fireflyActive=_bugCounts.ff; _regularActive=_bugCounts.reg;
+      _applyBugGate(_bugCounts);
+    }
+    // Motion scale: midnight=nearly still, noon=full sway
+    var speedScale = lerp(0.35, 1.0, drift);
+    var swayScale  = lerp(0.35, 1.0, drift);
+    var ft = frameT * 0.025;   // was 0.006 — 4× faster noise advance
+
+    // Restore static background
+    image(bgImage, 0, 0);
+
+    // Topo flow marks — between bg and leaves
+    if(sl.topo > 0.05){
+      // Flow marks get their own floor so they move even at midnight
+      stepFlowMarks(Math.max(speedScale, 0.40), sl.topo, sl.topoContrast, frameT);
+    }
+
+    // Leaves with world-coherent sway
+    // _seededDraw fixes Math.random inside draw fns → stable stipple, no flicker
+    for(var li=0; li<leafData.length; li++){
+      var ld = leafData[li];
+      var amp    = swayAmt(ld.type) * swayScale;
+      var leafN  = (noise(ld.ns,       ld.ns*0.6,  ft)     * 2 - 1) * amp;
+      var worldN = (noise(ld.x/200,    ld.y/200,   ft*0.7) * 2 - 1) * amp * 0.35;
+      var swayAng = ld.ang + leafN + worldN;
+      (function(leaf, ang){
+        _seededDraw(leaf.ns, function(){
+          drawTypedLeaf(leaf.type, leaf.x, leaf.y, ang,
+                        leaf.len, leaf.wid, leaf.wt, leaf.h, leaf.s, leaf.b, leaf.a);
+        });
+      })(ld, swayAng);
+    }
+
+    // Winter shapes with sway
+    for(var wi=0; wi<winterData.length; wi++){
+      var wd = winterData[wi];
+      var wamp   = swayAmt(wd.type) * swayScale * 0.75;
+      var wN     = (noise(wd.ns*1.1, wd.ns*0.7, ft*0.9) * 2 - 1) * wamp;
+      var wwN    = (noise(wd.x/200,  wd.y/200,  ft*0.7) * 2 - 1) * wamp * 0.35;
+      var wSwayAng = wd.ang + wN + wwN;
+      (function(w, ang){
+        _seededDraw(w.ns, function(){
+          drawAmbientShape(w.type, w.x, w.y, ang, w.sz, w.h, w.s, w.b, w.a);
+        });
+      })(wd, wSwayAng);
+    }
+
+    frameT++;
+    // Update firefly counter display every 30 frames
+    if(frameT % 30 === 0){
+      var el=document.getElementById('fireflyCount');
+      if(el) el.textContent='fireflies: '+_fireflyActive+' · flies: '+_regularActive+' · total: '+(_fireflyActive+_regularActive)+' / '+BUG_MAX;
+    }
+  }
+
+
+
+  // ── Time functions using _now() ───────────────────────
+  var isBuilding=false;
+  function getHours(){
+    var d=_now();
+    return d.getHours()+d.getMinutes()/60+d.getSeconds()/3600;
+  }
+  function getActiveDate(){ return _now(); }
+  function getAnnualData(){
+    var d=_now();
+    var doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000),phase=doy/365;
+    return{
+      doy:doy, phase:phase,
+      seasonMult:clamp(0.45+0.55*(-Math.cos(2*Math.PI*phase)),0.1,1.0),
+      annualHueShift:Math.sin(2*Math.PI*phase)*55
+    };
+  }
+  function getDrift(){
+    var d=_now();
+    var doy=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+    var shift=Math.sin((2*Math.PI*doy)/365)*4;
+    return Math.max(0,Math.sin(Math.PI*(getHours()-shift)/24)*0.92);
+  }
+  function getTypeBlend(h){ return((1-Math.cos(2*Math.PI*h/24))/2)*0.85; }
+  var NM0=Date.UTC(2025,0,29,12,36,0), LC=29.53058867*86400000;
+  function getMoon(){
+    var d=_now(),el=((d.getTime()-NM0)%LC+LC)%LC,ph=el/LC;
+    return{factor:(1-Math.cos(2*Math.PI*ph))/2};
+  }
+
+  // ── Mask + rasterise ─────────────────────────────────
+  var occupied=null, edgePixels=[], normals=[], thickness=[];
+  function buildMask(imgData){
+    occupied=new Uint8Array(SIZE*SIZE);
+    for(var i=0;i<SIZE*SIZE;i++) occupied[i]=imgData[i*4+3]>10?1:0;
+    edgePixels=[]; normals=[]; thickness=[];
+    var MC=120;
+    for(var y=1;y<SIZE-1;y++){ for(var x=1;x<SIZE-1;x++){
+      if(!occupied[y*SIZE+x]) continue;
+      var isEdge=!occupied[(y-1)*SIZE+x]||!occupied[(y+1)*SIZE+x]
+               ||!occupied[y*SIZE+(x-1)]||!occupied[y*SIZE+(x+1)];
+      if(!isEdge) continue;
+      var gx2=-(occupied[clamp(y-1,0,SIZE-1)*SIZE+clamp(x-1,0,SIZE-1)])
+             -2*(occupied[clamp(y,0,SIZE-1)*SIZE+clamp(x-1,0,SIZE-1)])
+             -(occupied[clamp(y+1,0,SIZE-1)*SIZE+clamp(x-1,0,SIZE-1)])
+             +(occupied[clamp(y-1,0,SIZE-1)*SIZE+clamp(x+1,0,SIZE-1)])
+             +2*(occupied[clamp(y,0,SIZE-1)*SIZE+clamp(x+1,0,SIZE-1)])
+             +(occupied[clamp(y+1,0,SIZE-1)*SIZE+clamp(x+1,0,SIZE-1)]);
+      var gy2=-(occupied[clamp(y-1,0,SIZE-1)*SIZE+clamp(x-1,0,SIZE-1)])
+             -2*(occupied[clamp(y-1,0,SIZE-1)*SIZE+clamp(x,0,SIZE-1)])
+             -(occupied[clamp(y-1,0,SIZE-1)*SIZE+clamp(x+1,0,SIZE-1)])
+             +(occupied[clamp(y+1,0,SIZE-1)*SIZE+clamp(x-1,0,SIZE-1)])
+             +2*(occupied[clamp(y+1,0,SIZE-1)*SIZE+clamp(x,0,SIZE-1)])
+             +(occupied[clamp(y+1,0,SIZE-1)*SIZE+clamp(x+1,0,SIZE-1)]);
+      var ang=Math.atan2(gy2,gx2)+Math.PI;
+      var inAng=ang+Math.PI, dx2=Math.cos(inAng), dy2=Math.sin(inAng), depth=0;
+      for(var step=1;step<=MC;step++){
+        var rx=Math.round(x+dx2*step), ry=Math.round(y+dy2*step);
+        if(rx<0||rx>=SIZE||ry<0||ry>=SIZE) break;
+        if(!occupied[ry*SIZE+rx]) break;
+        depth=step;
+      }
+      edgePixels.push([x,y]); normals.push(ang);
+      thickness.push(clamp(depth/60,0.08,1.0));
+    }}
+  }
+
+  function rasterizeSVG(cb){
+    var mc=document.createElement("canvas"); mc.width=mc.height=SIZE;
+    var mx=mc.getContext("2d"); mx.clearRect(0,0,SIZE,SIZE);
+    var ds=SVG_SIZE*svgScale, dx=svgCX-ds/2, dy=svgCY-ds/2;
+    mx.drawImage(svgImg,dx,dy,ds,ds);
+    cb(mx.getImageData(0,0,SIZE,SIZE).data);
+  }
+
+  // ── Build piece ───────────────────────────────────────
+  async function buildPiece(){
+    if(isBuilding) return;
+    isBuilding=true; built=false;
+    leafData=[]; winterData=[];
+    var sl=getSliders();
+    var seed=hashName(currentName), rng=mulberry32(seed);
+    var drift=getDrift(), hours=getHours(), tb=getTypeBlend(hours);
+    var moon=getMoon(), mf=moon.factor;
+    var annual=getAnnualData(), sm=annual.seasonMult, ahs=annual.annualHueShift, d=drift;
+    var leafMult=sl.leafMult, sizeMult=sl.leafSize;
+    buildTopoMap(rng,sl.topoScale);
+    buildTopoGradient();
+    background(0,0,8);
+    await drawTopoBackground(rng,d,tb,ahs,sl.topo,sl.topoContrast);
+    bgImage=get(0,0,SIZE,SIZE);
+    initFlowMarks(drift);
+    var leafHueBase  =hmod(blendTypeHue(tb*0.4,rng)+ahs+d*18);
+    var leafSatBase  =lerp(52,88,d),  leafBriBase=lerp(35,70,rng()), leafAlpBase=lerp(60,95,rng());
+    var leafLenBase  =lerp(22,70,rng())*lerp(0.55,1.0,sm)*sizeMult;
+    var leafWidBase  =lerp(8,26,rng())*lerp(0.60,1.0,sm)*sizeMult;
+    var leafWtBase   =lerp(1.0,2.2,rng());
+    var leafCount    =Math.floor(lerp(50,180,mf)*sm*leafMult);
+    var innerHueBase =hmod(blendTypeHue(1.0-tb*0.4,rng)+ahs+d*12);
+    var innerSatBase =lerp(30,65,d),  innerBriBase=lerp(18,48,rng()), innerAlpBase=lerp(45,78,rng());
+    var innerLenBase =lerp(10,34,rng())*lerp(0.55,1.0,sm)*sizeMult;
+    var innerWidBase =lerp(4,16,rng())*lerp(0.60,1.0,sm)*sizeMult;
+    var innerWtBase  =lerp(0.8,2.0,rng());
+    var innerCount   =Math.floor(lerp(20,80,mf)*sm*leafMult);
+    if(edgePixels.length>0){
+      for(var li=0;li<leafCount;li++){
+        var ei=Math.floor((li/leafCount)*edgePixels.length);
+        var ep=edgePixels[ei], th=thickness[ei];
+        var angle=normals[ei]+(rng()-0.5)*lerp(0.2,0.8,d);
+        leafData.push({type:TYPE1_NAME,x:ep[0],y:ep[1],ang:angle,
+          len:leafLenBase*lerp(0.45,1.55,rng())*lerp(0.30,1.0,th),
+          wid:leafWidBase*lerp(0.40,1.60,rng())*lerp(0.25,1.0,th),
+          wt:leafWtBase*lerp(0.6,1.4,rng())*lerp(0.5,1.0,th),
+          h:hmod(leafHueBase+(rng()-0.5)*22),
+          s:clamp(leafSatBase+(rng()-0.5)*22,0,100),
+          b:clamp(leafBriBase+(rng()-0.5)*28,0,100),
+          a:clamp(leafAlpBase+(rng()-0.5)*20,0,100),
+          ns:rng()*800});
+      }
+      for(var li2=0;li2<innerCount;li2++){
+        var ei2=Math.floor((li2/innerCount)*edgePixels.length);
+        var ep2=edgePixels[ei2], th2=thickness[ei2];
+        var angle2=normals[ei2]+Math.PI+(rng()-0.5)*lerp(0.2,0.7,d);
+        leafData.push({type:TYPE2_NAME,x:ep2[0],y:ep2[1],ang:angle2,
+          len:innerLenBase*lerp(0.45,1.65,rng())*lerp(0.25,1.0,th2),
+          wid:innerWidBase*lerp(0.45,1.65,rng())*lerp(0.25,1.0,th2),
+          wt:innerWtBase*lerp(0.6,1.4,rng())*lerp(0.4,1.0,th2),
+          h:hmod(innerHueBase+(rng()-0.5)*22),
+          s:clamp(innerSatBase+(rng()-0.5)*20,0,100),
+          b:clamp(innerBriBase+(rng()-0.5)*22,0,100),
+          a:clamp(innerAlpBase+(rng()-0.5)*20,0,100),
+          ns:rng()*800});
+      }
+      populateWinterData(rng,drift,sm,ahs,sl.winterMult);
+    }
+    frameT=0; built=true; isBuilding=false;
+  }
+
+  // ── Interaction ───────────────────────────────────────
+  function onCanvasClick(evt){
+    if(isBuilding) return;
+    var rect=evt.target.getBoundingClientRect();
+    svgCX=(evt.clientX-rect.left)*(SIZE/rect.width);
+    svgCY=(evt.clientY-rect.top)*(SIZE/rect.height);
+    svgScale=lerp(0.55,1.65,Math.random());
+    randomizeParams();
+    rasterizeSVG(function(d){ buildMask(d); buildPiece(); });
+  }
+  function onCanvasScroll(evt){
+    if(isBuilding) return;
+    evt.preventDefault();
+    svgScale=clamp(svgScale+(evt.deltaY>0?-0.08:0.08),0.25,3.0);
+    rasterizeSVG(function(d){ buildMask(d); buildPiece(); });
+  }
+
+  // ── Load pokémon by date ──────────────────────────────
+  function setStatus(msg){ document.getElementById("status").textContent=msg; }
+
+  function loadPokemon(d){
+    var row = dateToPokemon(d);
+    var num=row[0], name=row[1], t1=row[2], t2=row[3]||row[2];
+    currentNum  = num;
+    currentName = name;
+    TYPE1_NAME  = t1;
+    TYPE2_NAME  = t2;
+    POKEDEX_NUM = num;
+    POKEDEX_HUE = Math.round((num/151)*360);
+    var pad3 = String(num).padStart(3,"0");
+    var title = pad3 + " " + name.replace("_"," ");
+    var typeStr = t2 && t2!==t1 ? t1+" / "+t2 : t1;
+    document.getElementById("title").textContent    = title.toUpperCase();
+    document.getElementById("subtitle").textContent = typeStr;
+    var url = REPO + pad3 + "_" + name + ".svg";
+    setStatus("loading...");
+    fetch(url)
+      .then(function(r){
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        return r.text();
+      })
+      .then(function(svgText){
+        var b64 = btoa(unescape(encodeURIComponent(svgText)));
+        svgImg = new Image();
+        svgImg.onload = function(){
+          svgCX=SIZE/2; svgCY=SIZE/2; svgScale=1.0;
+          randomizeParams();
+          rasterizeSVG(function(px){ buildMask(px); buildPiece(); });
+        };
+        svgImg.src = "data:image/svg+xml;base64," + b64;
+        setStatus("");
+      })
+      .catch(function(e){ setStatus("error: "+e.message); });
+  }
+
+  // ── Picker change handler ─────────────────────────────
+  function onPickerChange(){
+    var d = inputsToDate();
+    if(isNaN(d.getTime())) return;
+    _mockDate = d;
+    // Update clock display to selected time
+    var h=d.getHours(), m=d.getMinutes(), s=d.getSeconds();
+    var ampm=h<12?"am":"pm", h12=h%12||12;
+    var months=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+    var el=document.getElementById("clock");
+    if(el) el.textContent=months[d.getMonth()]+" "+d.getDate()+" "+d.getFullYear()
+                          +" · "+h12+":"+pad(m)+":"+pad(s)+" "+ampm;
+    loadPokemon(d);
+  }
+
+  document.getElementById("pickerDate").addEventListener("change", onPickerChange);
+  document.getElementById("pickerTime").addEventListener("change", onPickerChange);
+
+  // ── p5 setup / draw ───────────────────────────────────
+  function setup(){
+    var cnv = createCanvas(SIZE, SIZE);
+    colorMode(HSB, 360, 100, 100, 100);
+    frameRate(22);
+    background(0,0,8);
+    cnv.elt.addEventListener("click", onCanvasClick);
+    cnv.elt.addEventListener("wheel", onCanvasScroll, {passive:false});
+    document.getElementById("canvasWrap").appendChild(cnv.elt);
+    // Load real date on startup
+    var now = new Date();
+    dateToInputs(now);
+    loadPokemon(now);
+    tickClock();
+  }
+  function draw(){ animateFrame(); }
+  </script>
+</body>
+</html>
