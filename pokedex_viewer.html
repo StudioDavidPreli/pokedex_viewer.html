@@ -803,6 +803,10 @@
 
   function setStatus(msg){ document.getElementById("status").textContent=msg; }
 
+  function reportHeight(){
+    window.parent.postMessage({ pokedexHeight: document.getElementById("wrap").scrollHeight + 32 }, "*");
+  }
+
   function loadPokemon(d){
     var row=dateToPokemon(d);
     var num=row[0], name=row[1], t1=row[2], t2=row[3]||row[2];
@@ -828,6 +832,7 @@
         };
         svgImg.src="data:image/svg+xml;base64,"+b64;
         setStatus("Yo! Champ in the making! Click date and time to adjust.");
+        reportHeight();
       })
       .catch(function(e){ setStatus("error: "+e.message); });
   }
@@ -859,6 +864,7 @@
     var now=new Date();
     dateToInputs(now);
     loadPokemon(now);
+    window.addEventListener("resize", reportHeight);
     tickClock();
   }
   function draw(){ animateFrame(); }
