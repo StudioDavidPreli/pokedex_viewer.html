@@ -4,50 +4,63 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>pokédex viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
     html, body {
-      background:#0d0d1a;
+      background:#262626;
       min-height:100vh;
       overflow:hidden;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-start;
-      padding:3vw 4vw;
-      font-family:monospace; color:#aaa;
+      padding: 0px;
+      font-family:'IBM Plex Mono', monospace; color:#aaa;
     }
     #wrap {
       display:flex; flex-direction:column;
-      align-items:center; gap:1.2vw;
-      width:100%; max-width:500px;
+      align-items:center; gap:1.3vw;
+      padding: 1.4vw 0px 0px;
+      width:100%; max-width:700px;
     }
     #controls {
       display:flex; gap:1vw; align-items:center;
       width:100%; flex-wrap:wrap; justify-content:center;
     }
     input[type=date], input[type=time] {
-      background:#0a0a14; border:1px solid #1a1a2e;
-      color:#4ecca3; font-family:monospace; font-size:1.8vw;
-      padding:0.6vw 1vw; border-radius:4px; letter-spacing:1px;
+      background:#141414; border:0px solid #1a1a2e;
+      color:#76c17d; font-family:'IBM Plex Mono', monospace; font-size:1.4vw;
+      padding:0.6vw 1vw; border-radius:0px; letter-spacing:1px;
       outline:none; cursor:pointer;
     }
     input[type=date]:focus, input[type=time]:focus {
       border-color:#4ecca3;
     }
-    h1    { color:#4ecca3; font-size:2vw; letter-spacing:3px; text-transform:uppercase; }
-    #subtitle { font-size:1.6vw; color:#333; letter-spacing:1px; }
-    #clock    { font-size:1.4vw; color:#222; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+    h1    { color:#76c17d; font-size:2vw; letter-spacing:3px; text-transform:uppercase; }
+    #subtitle { font-size:1.4vw; color:#efefef91; letter-spacing:1px; }
+    #clock    { font-size:1.4vw; color:#efefef74; letter-spacing:1px; font-variant-numeric:tabular-nums; }
     #canvasWrap {
       width: min(500px, calc(100vw - 8vw));
       aspect-ratio: 1 / 1;
       position: relative;
     }
+    #identity {
+      display: flex;
+      gap: 1vw;
+      align-items: baseline;
+      width: min(500px, calc(100vw - 8vw));
+      flex-wrap: wrap;
+      justify-content: center;
+    }
     #canvasWrap canvas {
       width:100% !important; height:100% !important;
-      border-radius:4px; cursor:crosshair; display:block;
+      border-radius:0px; cursor:crosshair; display:block;
     }
     #status {
-      font-size:1.4vw; color:#1e1e32; letter-spacing:1px; min-height:1.4vw;
+      font-size:1.4vw; color:#e1e1e191; letter-spacing:1px; min-height:1.4vw;
+      width: min(500px, calc(100vw - 8vw));
+      text-align: center;
+      word-wrap: break-word;
     }
   </style>
 </head>
@@ -56,12 +69,13 @@
     <div id="controls">
       <input type="date" id="pickerDate">
       <input type="time" id="pickerTime" step="1">
-    </div>
+    </div>  
+    <div id="identity">
     <h1 id="title">———</h1>
-    <div id="subtitle"></div>
-    <div id="clock"></div>
-    <div id="canvasWrap"></div>
+    <span id="subtitle"></span>
+    </div>
     <div id="status"></div>
+    <div id="canvasWrap"></div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -813,7 +827,7 @@
           rasterizeSVG(function(px){ buildMask(px); buildPiece(); });
         };
         svgImg.src="data:image/svg+xml;base64,"+b64;
-        setStatus("");
+        setStatus("Yo! Champ in the making! Click date and time to adjust.");
       })
       .catch(function(e){ setStatus("error: "+e.message); });
   }
