@@ -13,70 +13,41 @@
       overflow:hidden;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-start;
-      padding:20px 24px;
+      padding:3vw 4vw;
       font-family:monospace; color:#aaa;
     }
     #wrap {
       display:flex; flex-direction:column;
-      align-items:center; gap:8px;
+      align-items:center; gap:1.2vw;
       width:100%; max-width:500px;
     }
     #controls {
-      display:flex; gap:8px; align-items:center;
+      display:flex; gap:1vw; align-items:center;
       width:100%; flex-wrap:wrap; justify-content:center;
     }
     input[type=date], input[type=time] {
       background:#0a0a14; border:1px solid #1a1a2e;
-      color:#4ecca3; font-family:monospace; font-size:11px;
-      padding:5px 8px; border-radius:4px; letter-spacing:1px;
+      color:#4ecca3; font-family:monospace; font-size:1.8vw;
+      padding:0.6vw 1vw; border-radius:4px; letter-spacing:1px;
       outline:none; cursor:pointer;
     }
     input[type=date]:focus, input[type=time]:focus {
       border-color:#4ecca3;
     }
-    h1    { color:#4ecca3; font-size:13px; letter-spacing:3px; text-transform:uppercase; }
-    #subtitle { font-size:11px; color:#333; letter-spacing:1px; }
-    #clock    { font-size:10px; color:#222; letter-spacing:1px; font-variant-numeric:tabular-nums; }
+    h1    { color:#4ecca3; font-size:2vw; letter-spacing:3px; text-transform:uppercase; }
+    #subtitle { font-size:1.6vw; color:#333; letter-spacing:1px; }
+    #clock    { font-size:1.4vw; color:#222; letter-spacing:1px; font-variant-numeric:tabular-nums; }
     #canvasWrap {
-      width: min(500px, calc(100vw - 48px));
+      width: min(500px, calc(100vw - 8vw));
       aspect-ratio: 1 / 1;
       position: relative;
-      margin-top:2px;
     }
     #canvasWrap canvas {
       width:100% !important; height:100% !important;
       border-radius:4px; cursor:crosshair; display:block;
     }
     #status {
-      font-size:10px; color:#1e1e32; letter-spacing:1px; min-height:14px;
-    }
-
-    /* ── Mobile ── */
-    @media (max-width: 600px) {
-      html, body {
-        padding:8px 12px;
-        justify-content:flex-start;
-      }
-      #wrap {
-        gap:4px;
-      }
-      #controls {
-        gap:6px;
-      }
-      input[type=date], input[type=time] {
-        font-size:10px;
-        padding:4px 6px;
-      }
-      h1 {
-        font-size:11px;
-        letter-spacing:2px;
-      }
-      #subtitle { font-size:10px; }
-      #clock    { font-size:9px; }
-      #canvasWrap {
-        width: min(500px, calc(100vw - 24px));
-        margin-top:2px;
-      }
+      font-size:1.4vw; color:#1e1e32; letter-spacing:1px; min-height:1.4vw;
     }
   </style>
 </head>
