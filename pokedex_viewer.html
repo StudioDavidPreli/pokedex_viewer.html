@@ -2,22 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>pokédex viewer</title>
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
     html, body {
-      background:#0d0d1a; min-height:100vh;
+      background:#0d0d1a;
+      min-height:100vh;
+      overflow:hidden;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-start;
-      padding:10px; font-family:monospace; color:#aaa;
+      padding:20px 24px;
+      font-family:monospace; color:#aaa;
     }
     #wrap {
       display:flex; flex-direction:column;
-      align-items:center; gap:10px;
+      align-items:center; gap:8px;
       width:100%; max-width:500px;
     }
-    /* ── Controls ── */
     #controls {
       display:flex; gap:8px; align-items:center;
       width:100%; flex-wrap:wrap; justify-content:center;
@@ -31,11 +34,9 @@
     input[type=date]:focus, input[type=time]:focus {
       border-color:#4ecca3;
     }
-    /* ── Identity ── */
     h1    { color:#4ecca3; font-size:13px; letter-spacing:3px; text-transform:uppercase; }
     #subtitle { font-size:11px; color:#333; letter-spacing:1px; }
     #clock    { font-size:10px; color:#222; letter-spacing:1px; font-variant-numeric:tabular-nums; }
-    /* ── Canvas ── */
     #canvasWrap {
       width: min(500px, calc(100vw - 48px));
       aspect-ratio: 1 / 1;
@@ -48,6 +49,34 @@
     }
     #status {
       font-size:10px; color:#1e1e32; letter-spacing:1px; min-height:14px;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      html, body {
+        padding:8px 12px;
+        justify-content:flex-start;
+      }
+      #wrap {
+        gap:4px;
+      }
+      #controls {
+        gap:6px;
+      }
+      input[type=date], input[type=time] {
+        font-size:10px;
+        padding:4px 6px;
+      }
+      h1 {
+        font-size:11px;
+        letter-spacing:2px;
+      }
+      #subtitle { font-size:10px; }
+      #clock    { font-size:9px; }
+      #canvasWrap {
+        width: min(500px, calc(100vw - 24px));
+        margin-top:2px;
+      }
     }
   </style>
 </head>
@@ -68,10 +97,8 @@
   <script>
   'use strict';
 
-  // ── GitHub SVG base URL ──────────────────────────────
   var REPO = "https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/";
 
-  // ── Pokédex table ────────────────────────────────────
   var POKEDEX = [
     [1,"bulbasaur","grass","poison"],[2,"ivysaur","grass","poison"],[3,"venusaur","grass","poison"],
     [4,"charmander","fire",null],[5,"charmeleon","fire",null],[6,"charizard","fire","flying"],
@@ -126,8 +153,7 @@
     [151,"mew","psychic",null]
   ];
 
-  // ── Date → pokémon lookup ────────────────────────────
-  var START_MS = new Date(2026, 1, 27).getTime(); // Feb 27 2026
+  var START_MS = new Date(2026,1,27).getTime();
   function dateToPokemon(d){
     var dayOffset = Math.floor((d.getTime() - START_MS) / 86400000);
     dayOffset = Math.max(0, Math.min(365, dayOffset));
@@ -135,11 +161,9 @@
     return POKEDEX[num - 1];
   }
 
-  // ── Mock clock — drives all artwork time functions ───
   var _mockDate = null;
   function _now(){ return _mockDate || new Date(); }
 
-  // ── Picker helpers ───────────────────────────────────
   function pad(n){ return String(n).padStart(2,"0"); }
   function dateToInputs(d){
     var yr=d.getFullYear(), mo=pad(d.getMonth()+1), dy=pad(d.getDate());
@@ -153,9 +177,8 @@
     return new Date(dv + "T" + tv);
   }
 
-  // ── Live clock display ───────────────────────────────
   function tickClock(){
-    if(_mockDate) return; // frozen when user has selected a time
+    if(_mockDate) return;
     var now = new Date();
     var h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
     var ampm=h<12?"am":"pm", h12=h%12||12;
@@ -163,15 +186,12 @@
     var el=document.getElementById("clock");
     if(el) el.textContent=months[now.getMonth()]+" "+now.getDate()+" "+now.getFullYear()
                           +" · "+h12+":"+pad(m)+":"+pad(s)+" "+ampm;
-    // Keep picker in sync with real time when live
     dateToInputs(now);
-    // Re-check if pokémon should change at midnight
     var expected = dateToPokemon(now);
     if(expected[0] !== currentNum) loadPokemon(now);
   }
   setInterval(tickClock, 1000);
 
-  // ── Sketch state ─────────────────────────────────────
   var SIZE=500, MARGIN=60, SVG_SIZE=SIZE-MARGIN*2;
   var svgCX=SIZE/2, svgCY=SIZE/2, svgScale=1.0;
   var svgImg = new Image();
@@ -186,7 +206,6 @@
     rock:[30,40,50],ghost:[260,275,290],dragon:[230,250,270]
   };
 
-  // ── Params ───────────────────────────────────────────
   var params={leafMult:1.0,leafSize:1.0,winterMult:1.0,topo:0.55,topoContrast:1.0,topoScale:0.35};
   function randomizeParams(){
     params.leafMult    =lerp(0.25,6.0,Math.random());
@@ -647,7 +666,6 @@
 
 
 
-  // ── Time functions using _now() ───────────────────────
   var isBuilding=false;
   function getHours(){
     var d=_now();
@@ -676,7 +694,6 @@
     return{factor:(1-Math.cos(2*Math.PI*ph))/2};
   }
 
-  // ── Mask + rasterise ─────────────────────────────────
   var occupied=null, edgePixels=[], normals=[], thickness=[];
   function buildMask(imgData){
     occupied=new Uint8Array(SIZE*SIZE);
@@ -721,7 +738,6 @@
     cb(mx.getImageData(0,0,SIZE,SIZE).data);
   }
 
-  // ── Build piece ───────────────────────────────────────
   async function buildPiece(){
     if(isBuilding) return;
     isBuilding=true; built=false;
@@ -784,7 +800,6 @@
     frameT=0; built=true; isBuilding=false;
   }
 
-  // ── Interaction ───────────────────────────────────────
   function onCanvasClick(evt){
     if(isBuilding) return;
     var rect=evt.target.getBoundingClientRect();
@@ -801,50 +816,41 @@
     rasterizeSVG(function(d){ buildMask(d); buildPiece(); });
   }
 
-  // ── Load pokémon by date ──────────────────────────────
   function setStatus(msg){ document.getElementById("status").textContent=msg; }
 
   function loadPokemon(d){
-    var row = dateToPokemon(d);
+    var row=dateToPokemon(d);
     var num=row[0], name=row[1], t1=row[2], t2=row[3]||row[2];
-    currentNum  = num;
-    currentName = name;
-    TYPE1_NAME  = t1;
-    TYPE2_NAME  = t2;
-    POKEDEX_NUM = num;
-    POKEDEX_HUE = Math.round((num/151)*360);
-    var pad3 = String(num).padStart(3,"0");
-    var title = pad3 + " " + name.replace("_"," ");
-    var typeStr = t2 && t2!==t1 ? t1+" / "+t2 : t1;
-    document.getElementById("title").textContent    = title.toUpperCase();
-    document.getElementById("subtitle").textContent = typeStr;
-    var url = REPO + pad3 + "_" + name + ".svg";
+    currentNum=num; currentName=name;
+    TYPE1_NAME=t1; TYPE2_NAME=t2;
+    POKEDEX_NUM=num; POKEDEX_HUE=Math.round((num/151)*360);
+    var pad3=String(num).padStart(3,"0");
+    var title=pad3+" "+name.replace("_"," ");
+    var typeStr=t2&&t2!==t1?t1+" / "+t2:t1;
+    document.getElementById("title").textContent=title.toUpperCase();
+    document.getElementById("subtitle").textContent=typeStr;
+    var url=REPO+pad3+"_"+name+".svg";
     setStatus("loading...");
     fetch(url)
-      .then(function(r){
-        if(!r.ok) throw new Error("HTTP "+r.status);
-        return r.text();
-      })
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
       .then(function(svgText){
-        var b64 = btoa(unescape(encodeURIComponent(svgText)));
-        svgImg = new Image();
-        svgImg.onload = function(){
+        var b64=btoa(unescape(encodeURIComponent(svgText)));
+        svgImg=new Image();
+        svgImg.onload=function(){
           svgCX=SIZE/2; svgCY=SIZE/2; svgScale=1.0;
           randomizeParams();
           rasterizeSVG(function(px){ buildMask(px); buildPiece(); });
         };
-        svgImg.src = "data:image/svg+xml;base64," + b64;
+        svgImg.src="data:image/svg+xml;base64,"+b64;
         setStatus("");
       })
       .catch(function(e){ setStatus("error: "+e.message); });
   }
 
-  // ── Picker change handler ─────────────────────────────
   function onPickerChange(){
-    var d = inputsToDate();
+    var d=inputsToDate();
     if(isNaN(d.getTime())) return;
-    _mockDate = d;
-    // Update clock display to selected time
+    _mockDate=d;
     var h=d.getHours(), m=d.getMinutes(), s=d.getSeconds();
     var ampm=h<12?"am":"pm", h12=h%12||12;
     var months=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
@@ -857,17 +863,15 @@
   document.getElementById("pickerDate").addEventListener("change", onPickerChange);
   document.getElementById("pickerTime").addEventListener("change", onPickerChange);
 
-  // ── p5 setup / draw ───────────────────────────────────
   function setup(){
-    var cnv = createCanvas(SIZE, SIZE);
-    colorMode(HSB, 360, 100, 100, 100);
+    var cnv=createCanvas(SIZE,SIZE);
+    colorMode(HSB,360,100,100,100);
     frameRate(22);
     background(0,0,8);
-    cnv.elt.addEventListener("click", onCanvasClick);
-    cnv.elt.addEventListener("wheel", onCanvasScroll, {passive:false});
+    cnv.elt.addEventListener("click",onCanvasClick);
+    cnv.elt.addEventListener("wheel",onCanvasScroll,{passive:false});
     document.getElementById("canvasWrap").appendChild(cnv.elt);
-    // Load real date on startup
-    var now = new Date();
+    var now=new Date();
     dateToInputs(now);
     loadPokemon(now);
     tickClock();
