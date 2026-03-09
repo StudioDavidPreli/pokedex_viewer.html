@@ -7,61 +7,87 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+      html {
+        background: #262626;
+        font-family: 'IBM Plex Mono', monospace;
+        color: #aaa;
+      }
 
-    html, body {
-      background:#262626;
-      min-height:0;
-      overflow:visible;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:flex-start;
-      padding: 0px;
-      font-family:'IBM Plex Mono', monospace; color:#aaa;
-    }
-    #wrap {
-      display:flex; flex-direction:column;
-      align-items:center; gap:1.3vw;
-      padding: 1.4vw 0px 0px;
-      width:100%; max-width:700px;
-    }
-    #controls {
-      display:flex; gap:1vw; align-items:center;
-      width:100%; flex-wrap:wrap; justify-content:center;
-    }
-    input[type=date], input[type=time] {
-      background:#141414; border:0px solid #1a1a2e;
-      color:#76c17d; font-family:'IBM Plex Mono', monospace; font-size:1.4vw;
-      padding:0.6vw 1vw; border-radius:0px; letter-spacing:1px;
-      outline:none; cursor:pointer;
-    }
-    input[type=date]:focus, input[type=time]:focus {
-      border-color:#4ecca3;
-    }
-    h1    { color:#76c17d; font-size:2vw; letter-spacing:3px; text-transform:uppercase; }
-    #subtitle { font-size:1.4vw; color:#efefef91; letter-spacing:1px; }
-    #clock    { font-size:1.4vw; color:#efefef74; letter-spacing:1px; font-variant-numeric:tabular-nums; }
-    #canvasWrap {
-      width: min(500px, calc(100vw - 8vw));
-      aspect-ratio: 1 / 1;
-      position: relative;
-    }
-    #identity {
-      display: flex;
-      gap: 1vw;
-      align-items: baseline;
-      width: min(500px, calc(100vw - 8vw));
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    #canvasWrap canvas {
-      width:100% !important; height:100% !important;
-      border-radius:0px; cursor:crosshair; display:block;
-    }
-    #status {
-      font-size:1.4vw; color:#e1e1e191; letter-spacing:1px; min-height:1.4vw;
-      width: min(500px, calc(100vw - 8vw));
-      text-align: center;
-      word-wrap: break-word;
-    }
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0vw;          
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      #wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.3vw;
+        border: 0px solid #e1e1e1;
+        padding: clamp(14px, 3vw, 28px);  
+        width: 100%;
+        max-width: 500px;
+      }
+
+      #controls {
+        display: flex;
+        gap: 1vw;
+        align-items: center;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      input[type=date], input[type=time] {
+        background: #141414;
+        border: 1px solid transparent;     
+        color: #76c17d;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: clamp(11px, 1.4vw, 16px);
+        padding: 0.6vw 1vw;
+        letter-spacing: 1px;
+        outline: none;
+        cursor: pointer;
+      }
+
+      input[type=date]:focus, input[type=time]:focus {
+        border-color: #4ecca3;
+      }
+
+      h1         { color: #76c17d; font-size: clamp(14px, 2vw, 22px); letter-spacing: 3px; text-transform: uppercase; }
+      #subtitle  { font-size: clamp(11px, 1.4vw, 16px); color: #efefef91; letter-spacing: 1px; }
+      #clock     { font-size: clamp(11px, 1.4vw, 16px); color: #efefef74; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+      #status    { font-size: clamp(11px, 1.4vw, 16px); color: #e1e1e191; letter-spacing: 1px; min-height: 1.4vw; text-align: center; word-wrap: break-word; }
+
+
+      #canvasWrap, #identity, #status {
+        width: 100%;
+      }
+
+      #canvasWrap {
+        aspect-ratio: 1 / 1;
+        position: relative;
+      }
+
+      #identity {
+        display: flex;
+        gap: 1vw;
+        align-items: baseline;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      #canvasWrap canvas {
+        width: 100% !important;
+        height: 100% !important;
+        cursor: crosshair;
+        display: block;
+      }
   </style>
 </head>
 <body>
