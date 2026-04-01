@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokédex Calendar — Case Study</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,700;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #141414;
+  --panel:   #1e1e1e;
+  --border:  #2e2e2e;
+  --accent:  #FF6060;
+  --accent2: #b9b0ff;
+  --accent3: #e8b86d;
+  --text:    #e1e1e1;
+  --muted:   #888888;
+  --muted2:  #aaaaaa;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  line-height: 1.75;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+.page { max-width: 860px; margin: 0 auto; padding: 56px 28px 160px; }
+
+/* ── Header ── */
+.cs-header { margin-bottom: 56px; border-bottom: 1px solid var(--border); padding-bottom: 32px; }
+
+.cs-eyebrow {
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.cs-title {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: clamp(36px, 7vw, 64px);
+  color: var(--accent);
+  line-height: 1.05;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+}
+
+.cs-subtitle {
+  font-size: 13px;
+  color: var(--muted2);
+  margin-bottom: 24px;
+}
+
+.cs-meta { display: flex; gap: 32px; flex-wrap: wrap; }
+.cs-meta-item { display: flex; flex-direction: column; gap: 3px; }
+.cs-meta-label { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+.cs-meta-value { font-size: 12px; color: var(--text); }
+
+/* ── Section titles ── */
+.sec-label {
+  font-size: 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.sec-num {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+h2 {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 26px;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  margin-top: 32px;
+}
+
+p { margin-bottom: 16px; color: var(--text); }
+
+p.lede {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted2);
+  margin-bottom: 28px;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.section { margin-bottom: 64px; }
+
+/* ── Pull quote ── */
+.pullquote {
+  border-left: 2px solid var(--accent);
+  padding: 16px 24px;
+  margin: 32px 0;
+  background: rgba(255,96,96,0.04);
+}
+.pullquote p {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--muted2);
+  margin: 0;
+}
+
+/* ── Workflow steps ── */
+.workflow { display: flex; flex-direction: column; gap: 2px; margin: 28px 0; }
+
+.wf-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+.wf-num {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 14px;
+}
+
+.wf-num-inner {
+  width: 28px; height: 28px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.wf-line {
+  flex: 1;
+  width: 1px;
+  background: var(--border);
+  margin: 4px auto 0;
+}
+
+.wf-step:last-child .wf-line { display: none; }
+
+.wf-body { padding: 10px 0 28px 16px; }
+
+.wf-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.wf-body p { margin-bottom: 8px; font-size: 12px; color: var(--muted2); }
+.wf-body p:last-child { margin-bottom: 0; }
+
+/* ── Tool pills ── */
+.tools { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
+
+.tool-pill {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 4px 10px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+
+.tool-pill.red    { border-color: rgba(255,96,96,0.4); color: var(--accent); }
+.tool-pill.purple { border-color: rgba(185,176,255,0.4); color: var(--accent2); }
+.tool-pill.amber  { border-color: rgba(232,184,109,0.4); color: var(--accent3); }
+
+/* ── SVG grid ── */
+.svg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+
+@media (max-width: 580px) { .svg-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.svg-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.svg-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.svg-caption {
+  padding: 8px 12px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+/* ── Illustration grid ── */
+.illus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+
+@media (max-width: 580px) { .illus-grid { grid-template-columns: 1fr; } }
+
+.illus-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.illus-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.illus-caption {
+  padding: 8px 12px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+/* ── Tool embed ── */
+.tool-embed {
+  margin: 32px 0;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tool-embed-label {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-embed-label::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.tool-embed iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  height: 600px;
+}
+
+/* ── Code block ── */
+.code-block {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 20px 24px;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+.code-block code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  line-height: 1.8;
+  white-space: pre;
+}
+
+code .kw  { color: var(--accent); }
+code .cm  { color: var(--muted); }
+code .fn  { color: var(--accent2); }
+code .nm  { color: var(--accent3); }
+
+/* ── Footer ── */
+.cs-footer {
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+  margin-top: 80px;
+}
+
+.cs-footer p { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+
+/* ── Responsive ── */
+@media (max-width: 580px) {
+  .cs-meta { gap: 20px; }
+  .page { padding: 32px 16px 100px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HEADER ── -->
+  <header class="cs-header">
+    <div class="cs-eyebrow">Case Study — Studio David Preli</div>
+    <h1 class="cs-title">Pokédex Calendar</h1>
+    <p class="cs-subtitle">A generative art engine that renders a different illustration every moment of the year.</p>
+    <div class="cs-meta">
+      <div class="cs-meta-item">
+        <span class="cs-meta-label">Medium</span>
+        <span class="cs-meta-value">p5.js / Browser</span>
+      </div>
+      <div class="cs-meta-item">
+        <span class="cs-meta-label">Year</span>
+        <span class="cs-meta-value">2026</span>
+      </div>
+      <div class="cs-meta-item">
+        <span class="cs-meta-label">Duration</span>
+        <span class="cs-meta-value">Feb 27, 2026 — Feb 27, 2027</span>
+      </div>
+      <div class="cs-meta-item">
+        <span class="cs-meta-label">Stack</span>
+        <span class="cs-meta-value">p5.js, GitHub Pages, SVG</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── VIEWER ── -->
+  <section class="section">
+    <div class="tool-embed">
+      <div class="tool-embed-label">Pokédex Calendar — live</div>
+      <iframe
+        src="https://studiodavidpreli.github.io/pokedex_viewer.html/pokedex_viewer.html"
+        id="cs-pokedex"
+        scrolling="no"
+        title="Pokédex Calendar viewer"
+        style="height: 600px;">
+      </iframe>
+    </div>
+  </section>
+
+  <!-- ── OVERVIEW ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">01</span>Overview</div>
+    <h2>One Pokémon per day, one frame per moment</h2>
+
+    <p class="lede">151 Pokémon across a calendar year. The image changes depending on when you open it.</p>
+
+    <p>Bulbasaur on February 27. Mew 366 days later. Each one drawn in the browser from the current hour, the season, and the phase of the moon. Open it at dawn and you get one thing. Open it at noon and the leaves are denser, the palette warmer, the animation faster. Come back in December and the marks are sparse. That is what December looks like.</p>
+
+    <p>It started as an illustration project. 151 drawings, one per Pokémon, done as clean flat SVGs. The engine does not display those drawings. It reads them, maps the silhouette, finds the edges, measures how deep the body is at every point along the outline, and uses all of that to decide where things grow. The SVG is the skeleton. The engine fills it in according to the time of day you showed up.</p>
+
+    <div class="pullquote">
+      <p>Nothing in the output is stored. Every time you load it the engine starts from scratch, reads the clock, and builds the image for that exact moment.</p>
+    </div>
+
+    <p>The whole thing runs as a single HTML file. The SVGs live in a separate GitHub repository. The viewer fetches whichever one it needs. No server, no database, no build step.</p>
+  </section>
+
+  <!-- ── THE ILLUSTRATIONS ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">02</span>The illustrations</div>
+    <h2>From flat drawing to generative input</h2>
+
+    <p class="lede">The SVGs are not decoration. They are the skeleton the engine builds around.</p>
+
+    <p>The original illustrations were drawn as clean, flat SVGs — one per Pokémon, each a silhouette with enough definition to be readable at small sizes. When the engine loads one, it rasterizes it to a 500×500 pixel canvas and runs a pixel-level analysis. Every edge pixel gets a normal vector computed via a Sobel operator. Every edge pixel also gets a thickness measurement — a ray cast inward to find out how deep the body is at that point. Thin areas like ears and tails get sparse, fine marks. Wide areas like the torso get dense layered growth.</p>
+
+    <h3>Original illustrations</h3>
+    <div class="svg-grid">
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/012_butterfree.png" alt="Butterfree original illustration" loading="lazy">
+        </div>
+        <div class="svg-caption">012 Butterfree</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/025_pikachu.png" alt="Pikachu original illustration" loading="lazy">
+        </div>
+        <div class="svg-caption">025 Pikachu</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/149_dragonite.png" alt="Dragonite original illustration" loading="lazy">
+        </div>
+        <div class="svg-caption">149 Dragonite</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/151_mew.png" alt="Mew original illustration" loading="lazy">
+        </div>
+        <div class="svg-caption">151 Mew</div>
+      </div>
+    </div>
+
+    <h3>SVGs used as engine input</h3>
+    <p>The four SVGs below are pulled live from the GitHub repository. This is the same fetch call the engine makes when you load the viewer.</p>
+    <div class="svg-grid">
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/012_butterfree.svg" alt="Butterfree SVG silhouette" loading="lazy">
+        </div>
+        <div class="svg-caption">012 Butterfree</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/025_pikachu.svg" alt="Pikachu SVG silhouette" loading="lazy">
+        </div>
+        <div class="svg-caption">025 Pikachu</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/149_dragonite.svg" alt="Dragonite SVG silhouette" loading="lazy">
+        </div>
+        <div class="svg-caption">149 Dragonite</div>
+      </div>
+      <div>
+        <div class="svg-wrap">
+          <img src="https://raw.githubusercontent.com/StudioDavidPreli/pokemonSVG/main/151_mew.svg" alt="Mew SVG silhouette" loading="lazy">
+        </div>
+        <div class="svg-caption">151 Mew</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── PROCESS ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">03</span>Process</div>
+    <h2>Four signals, one image</h2>
+
+    <p class="lede">Time of day, season, moon phase, and Pokémon type. Each one controls a different dimension of the output.</p>
+
+    <div class="workflow">
+
+      <div class="wf-step">
+        <div class="wf-num">
+          <div class="wf-num-inner">1</div>
+          <div class="wf-line"></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-title">Date to Pokémon lookup</div>
+          <div class="tools">
+            <span class="tool-pill red">JavaScript</span>
+            <span class="tool-pill red">Linear interpolation</span>
+          </div>
+          <p>151 Pokémon distributed across 366 days using a simple linear formula. Day 0 is Bulbasaur. Day 365 is Mew. The lookup runs in the browser on every page load — no server call, no database. The viewer also has a date and time picker so you can move anywhere in the year and see what that moment looks like.</p>
+          <div class="code-block"><code><span class="kw">var</span> dayOffset = Math.floor((d.getTime() - START_MS) / <span class="nm">86400000</span>);
+<span class="kw">var</span> num = Math.min(<span class="nm">151</span>, Math.floor(dayOffset * <span class="nm">150</span> / <span class="nm">365</span>) + <span class="nm">1</span>);</code></div>
+        </div>
+      </div>
+
+      <div class="wf-step">
+        <div class="wf-num">
+          <div class="wf-num-inner">2</div>
+          <div class="wf-line"></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-title">SVG fetch and mask build</div>
+          <div class="tools">
+            <span class="tool-pill red">GitHub CDN</span>
+            <span class="tool-pill red">Canvas 2D</span>
+            <span class="tool-pill red">Sobel operator</span>
+          </div>
+          <p>The SVG is fetched from raw GitHub, base64-encoded, and drawn to an offscreen 500×500 canvas. The pixel data is read into a typed array. Every edge pixel gets a normal vector via Sobel convolution and a thickness value via ray-casting inward. This produces three arrays: edge pixel coordinates, outward angles, and body depth at each point. The rest of the engine reads from those arrays.</p>
+        </div>
+      </div>
+
+      <div class="wf-step">
+        <div class="wf-num">
+          <div class="wf-num-inner">3</div>
+          <div class="wf-line"></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-title">Time signals</div>
+          <div class="tools">
+            <span class="tool-pill purple">getHours()</span>
+            <span class="tool-pill purple">getAnnualData()</span>
+            <span class="tool-pill purple">getMoon()</span>
+            <span class="tool-pill purple">getDrift()</span>
+          </div>
+          <p>Four functions read the current moment and return values the renderer uses directly. <code>getHours()</code> returns fractional hours including minutes and seconds — this drives color temperature and bug population. <code>getAnnualData()</code> returns the day of year, a seasonal multiplier (peaks in summer, drops in winter), and an annual hue shift tied to a sine curve. <code>getMoon()</code> calculates lunar phase from a known epoch and returns a 0–1 factor that scales leaf density. <code>getDrift()</code> is a composite of time and season that controls overall animation energy.</p>
+          <p>All four route through a <code>_now()</code> wrapper instead of calling <code>new Date()</code> directly. When the picker is in use, <code>_mockDate</code> overrides the real clock. Every downstream calculation responds instantly.</p>
+        </div>
+      </div>
+
+      <div class="wf-step">
+        <div class="wf-num">
+          <div class="wf-num-inner">4</div>
+          <div class="wf-line"></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-title">Generative elements</div>
+          <div class="tools">
+            <span class="tool-pill amber">p5.js</span>
+            <span class="tool-pill amber">Perlin noise</span>
+            <span class="tool-pill amber">Bézier curves</span>
+            <span class="tool-pill amber">mulberry32 PRNG</span>
+          </div>
+          <p>Two leaf populations grow from the edge data — one for each of the Pokémon's types. Type 1 leaves grow outward along the surface normals. Type 2 leaves grow inward. Each leaf is a Bézier curve with hue derived from the type color table, shifted by season and time of day. Length, width, and density are all modulated by the moon factor, the season multiplier, and the local body thickness measured in step 2. A separate winter mark set thins out as summer approaches and fills in as it recedes.</p>
+          <p>The topo background is a multi-pass Perlin noise field rendered before the leaves. Each Pokémon name is hashed to seed a <code>mulberry32</code> PRNG, so the same name always produces the same noise field. The only variation between two renders of the same Pokémon is wall-clock time.</p>
+        </div>
+      </div>
+
+      <div class="wf-step">
+        <div class="wf-num">
+          <div class="wf-num-inner">5</div>
+          <div class="wf-line"></div>
+        </div>
+        <div class="wf-body">
+          <div class="wf-title">Animation loop</div>
+          <div class="tools">
+            <span class="tool-pill amber">p5.js draw()</span>
+            <span class="tool-pill amber">22fps</span>
+          </div>
+          <p>The engine runs at 22fps. Each frame restores a static background image captured after the topo pass, then advances a 0–1 animation clock and redraws every leaf at a position offset by a sine function seeded with that leaf's own noise value. Each leaf oscillates on its own phase. The result looks like breathing rather than animation — everything moves but nothing goes anywhere. Click the canvas to reposition the silhouette and randomize all parameters. Scroll to zoom.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── PHILOSOPHY ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">04</span>Philosophy</div>
+    <h2>Time as the medium</h2>
+
+    <p class="lede">The image you see right now does not exist anywhere. It was built when you loaded the page and it will not be built again in exactly this way.</p>
+
+    <p>Most images are made once. This one is made continuously. Open it at 7am in January, you get one thing. Open it at 7pm in July and the hue has shifted, the leaves are packed in, the drift is at full energy. The engine is always reading its context. It does not know you are looking at it, but it knows what time it is.</p>
+
+    <p>The Pokémon framing is not decorative. The original 151 were designed as a closed system, a taxonomy with its own internal logic about types and habitats and how things relate to each other. Using that system as a calendar gives the year a shape it would not otherwise have. February is Bulbasaur. October is around Gengar. New Year's Eve is Dragonite or Dragonair, depending on the year.</p>
+
+    <div class="pullquote">
+      <p>At 3am in February it is sparse and cold and a little grim. That is the correct output for 3am in February.</p>
+    </div>
+
+    <p>The moon was not planned. Once the seasonal and time-of-day signals were in place it was the obvious third variable, something that shifts on its own schedule without asking for attention. A full moon in July looks different from a new moon in July. Most people will not know why. That gap between cause and perception is where the piece lives.</p>
+
+    <p>The date and time picker exists because a piece about time should be navigable. Jump to the winter solstice at midnight. Jump to the summer solstice at noon. The distance between those two moments is the actual content.</p>
+  </section>
+
+  <!-- ── THE VIEWER ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">05</span>The viewer</div>
+    <h2>One file, no build step</h2>
+
+    <p>The viewer is a single self-contained HTML file. It loads p5.js from a CDN, fetches SVGs from GitHub, and runs entirely in the browser. There is no framework, no bundler, no server. The whole thing weighs about 58KB before the p5 library.</p>
+
+    <p>Hosting on GitHub Pages meant the SVG repository and the viewer could live side by side. The viewer fetches from <code>raw.githubusercontent.com</code> — a direct CDN link to whatever is in the repo at that moment. Adding a new SVG to the repo makes it immediately available to the viewer without any other change.</p>
+
+    <h3>Embedding on Cargo</h3>
+    <p>The viewer is embedded in the portfolio site via iframe. Cross-origin iframe height reporting uses <code>postMessage</code> — the viewer measures its own content height after the SVG loads and sends that value to the parent page, which resizes the iframe to match. A 50ms debounce prevents the resize from triggering Cargo's ResizeObserver in a loop.</p>
+
+    <h3>The mock clock</h3>
+    <p>All time-sensitive functions route through <code>_now()</code> rather than calling <code>new Date()</code> directly. When the picker is in use, <code>_mockDate</code> overrides the real clock and every downstream calculation — season, moon phase, hour, drift — responds to the selected moment instead of the current one. Setting <code>_mockDate</code> back to <code>null</code> returns the piece to live time.</p>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="cs-footer">
+    <p>Studio David Preli — <a href="https://davidpreli.com">davidpreli.com</a></p>
+    <p>Viewer — <a href="https://studiodavidpreli.github.io/pokedex_viewer.html/pokedex_viewer.html" target="_blank">studiodavidpreli.github.io/pokedex_viewer.html</a></p>
+    <p>SVG repository — <a href="https://github.com/StudioDavidPreli/pokemonSVG" target="_blank">github.com/StudioDavidPreli/pokemonSVG</a></p>
+  </footer>
+
+</div>
+
+<script>
+function reportHeight() {
+  var h = Math.max(
+    document.body.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.scrollHeight,
+    document.documentElement.offsetHeight
+  );
+  window.parent.postMessage({ type: 'resize', height: h }, '*');
+}
+reportHeight();
+window.addEventListener('load', reportHeight);
+setTimeout(reportHeight, 500);
+setTimeout(reportHeight, 1500);
+setTimeout(reportHeight, 4000);
+</script>
+</body>
+</html>
