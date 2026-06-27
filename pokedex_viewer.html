@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pokédex viewer</title>
 
+  <!-- ============================================================
+       pokedex_viewer_v2.html — Layout A (compact bar)
+       Changes from pokedex_viewer.html (v1):
+       • Theme — page bg + chrome text flip with display mode. Defaults to OS
+         (prefers-color-scheme); follows the host site via the
+         postMessage({theme}) listener in the <head> script below. Dark bg is
+         #141414 (the p5 canvas base) so the page blends into the art; light
+         bg is #fff. The p5 artwork itself is always dark.
+       • Type — IBM Plex Mono (portfolio typeface) via Google Fonts CDN.
+       • Render — pixelDensity(2) → real 1000px canvas + PNG, with NO retuning
+         of the generative geometry (it stays in the 500-unit coord space).
+       • Layout A — compact top bar (date · time · export | identity number).
+         Footer = type · instruction · status. Responsive; ?embed=1 = art only.
+       • PNG export — button sized to the date field; saveCanvas fires on the
+         next frame; filename stamps pokémon + the active date AND time.
+       • Footer instruction line replaces the old live date/time clock.
+       Parent-site hook to follow the toggle (do this on the portfolio):
+         on iframe load + on every toggle,
+         iframe.contentWindow.postMessage({theme:'dark'|'light'}, origin)
+       See CHANGES.md in this folder for the full rundown.
+       ============================================================ -->
+
   <!-- Portfolio typeface (self-hosted on the site; CDN here for the standalone file) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,7 +83,7 @@
       --text-4:rgba(255,255,255,0.4);
       --text-5:rgba(255,255,255,0.25);
       --accent:#4ecca3;                /* neon-green identity, dark only */
-      --input-bg:#0a0a14;
+      --input-bg:#262626;
       --input-border:#1a1a2e;
       --input-border-focus:#4ecca3;
       --input-text:#4ecca3;
