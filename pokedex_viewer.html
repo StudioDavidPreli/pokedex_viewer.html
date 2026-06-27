@@ -83,7 +83,7 @@
       --text-4:rgba(255,255,255,0.4);
       --text-5:rgba(255,255,255,0.25);
       --accent:#4ecca3;                /* neon-green identity, dark only */
-      --input-bg:#262626;
+      --input-bg:#0a0a14;
       --input-border:#1a1a2e;
       --input-border-focus:#4ecca3;
       --input-text:#4ecca3;
@@ -107,7 +107,7 @@
       gap:12px 16px; width:100%; flex-wrap:wrap;
     }
     #controls {
-      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+      display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;
     }
     input[type=date], input[type=time], #exportBtn {
       background:var(--input-bg); border:1px solid var(--input-border);
@@ -118,8 +118,10 @@
     input[type=date]:focus, input[type=time]:focus, #exportBtn:hover {
       border-color:var(--input-border-focus);
     }
-    /* match the date field's footprint (border-box) */
-    #exportBtn { width:130px; text-align:center; }
+    /* Height — #controls uses align-items:stretch, so the button auto-fills the
+       cross-axis of its flex line, matching the taller date/time field exactly
+       (border-box). No magic number; the button keeps its own content width. */
+    #exportBtn { text-align:center; }
     /* ── Identity ── */
     h1    { color:var(--accent); font-size:13px; font-weight:600; letter-spacing:3px; text-transform:uppercase; white-space:nowrap; }
     /* ── Footer (type · date · status) ── */
