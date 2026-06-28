@@ -27,12 +27,13 @@
        See CHANGES.md in this folder for the full rundown.
        ============================================================ -->
 
-  <!-- Portfolio typeface (self-hosted on the site; CDN here for the standalone file) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-
   <!-- ── Theme init (runs before first paint to avoid a flash) ──
+       MUST stay the first thing in <head>, ABOVE the font <link> below. A
+       stylesheet <link> blocks the next inline <script> from executing until
+       that CSS has downloaded, so leaving this after the font link delayed the
+       .dark-mode class past first paint — the browser painted one light frame
+       (the white default) before the class landed, the dark-mode flash. First
+       in the head, the class is set before any stylesheet or paint.
        Default: ?theme= param wins, else the visitor's OS preference.
        Then: keeps following the OS until an explicit choice arrives, and
        listens for postMessage({theme:'dark'|'light'}) so the host site's
@@ -56,6 +57,11 @@
     }
   })();
   </script>
+
+  <!-- Portfolio typeface (self-hosted on the site; CDN here for the standalone file) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
