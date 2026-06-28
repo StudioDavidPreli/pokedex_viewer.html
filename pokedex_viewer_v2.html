@@ -43,10 +43,14 @@
   (function(){
     var root = document.documentElement, explicit = false;
     var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    function apply(t){ root.classList.toggle('dark-mode', t === 'dark'); }
+    function apply(t){ root.classList.toggle('light-mode', t === 'light'); }
     var p = new URLSearchParams(location.search), q = p.get('theme');
     if(q === 'dark' || q === 'light'){ explicit = true; apply(q); }
-    else { apply(mq.matches ? 'dark' : 'light'); }
+    // Default to the piece's own dark (it matches the dark p5 art), so the chrome boots
+    // dark on first paint with no dependence on this script landing pre-paint — the way
+    // BLOCK & LINE's default :root already matches its paper art. OS is not read at init,
+    // so the feed never boots light; an OS change after load still applies below.
+    else { apply('dark'); }
     mq.addEventListener('change', function(e){ if(!explicit) apply(e.matches ? 'dark' : 'light'); });
     window.addEventListener('message', function(ev){
       var d = ev.data;
@@ -70,19 +74,9 @@
        Only the chrome reads these; the p5 canvas paints its own dark art. */
     :root {
       --font-mono:'IBM Plex Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
-      /* light theme (default) */
-      --viewer-bg:#ffffff;
-      --text-1:rgba(0,0,0,0.85);
-      --text-3:rgba(0,0,0,0.6);
-      --text-4:rgba(0,0,0,0.4);
-      --text-5:rgba(0,0,0,0.25);
-      --accent:rgba(0,0,0,0.85);       /* mint green is unreadable on white → dark title */
-      --input-bg:#f2f2f2;
-      --input-border:rgba(0,0,0,0.2);
-      --input-border-focus:rgba(0,0,0,0.5);
-      --input-text:rgba(0,0,0,0.85);
-    }
-    :root.dark-mode {
+      /* dark theme is the DEFAULT — it matches the dark p5 art (background(0,0,8)), so the
+         chrome boots dark with no JS, param, or postMessage (mirrors BLOCK & LINE, whose
+         default :root matches its paper art). Light is the opt-in (.light-mode) below. */
       --viewer-bg:#141414;             /* = p5 background(0,0,8) → seamless with the art */
       --text-1:rgba(255,255,255,0.85);
       --text-3:rgba(255,255,255,0.6);
@@ -94,13 +88,24 @@
       --input-border-focus:#4ecca3;
       --input-text:#4ecca3;
     }
+    :root.light-mode {
+      --viewer-bg:#ffffff;
+      --text-1:rgba(0,0,0,0.85);
+      --text-3:rgba(0,0,0,0.6);
+      --text-4:rgba(0,0,0,0.4);
+      --text-5:rgba(0,0,0,0.25);
+      --accent:rgba(0,0,0,0.85);       /* mint green is unreadable on white → dark title */
+      --input-bg:#f2f2f2;
+      --input-border:rgba(0,0,0,0.2);
+      --input-border-focus:rgba(0,0,0,0.5);
+      --input-text:rgba(0,0,0,0.85);
+    }
 
     html, body {
       background:var(--viewer-bg); min-height:100vh;
       display:flex; flex-direction:column;
       align-items:center; justify-content:center;
       padding:24px; font-family:var(--font-mono); color:var(--text-3);
-      transition:background-color .2s ease, color .2s ease;
     }
     #wrap {
       display:flex; flex-direction:column;

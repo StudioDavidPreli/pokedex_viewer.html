@@ -40,10 +40,14 @@
   (function(){
     var root = document.documentElement, explicit = false;
     var mq = window.matchMedia('(prefers-color-scheme: dark)');
-    function apply(t){ root.classList.toggle('dark-mode', t === 'dark'); }
+    function apply(t){ root.classList.toggle('light-mode', t === 'light'); }
     var p = new URLSearchParams(location.search), q = p.get('theme');
     if(q === 'dark' || q === 'light'){ explicit = true; apply(q); }
-    else { apply(mq.matches ? 'dark' : 'light'); }
+    // Default to the piece's own dark (it matches the dark p5 art), so the chrome boots
+    // dark on first paint with no dependence on this script landing pre-paint — the way
+    // BLOCK & LINE's default :root already matches its paper art. OS is not read at init,
+    // so the tool never boots light; an OS change after load still applies below.
+    else { apply('dark'); }
     mq.addEventListener('change', function(e){ if(!explicit) apply(e.matches ? 'dark' : 'light'); });
     window.addEventListener('message', function(ev){
       var d = ev.data;
@@ -68,22 +72,9 @@
     :root {
       --font-mono:'IBM Plex Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
       --feedback-ui-duration:0.2s;
-      /* viewer chrome — light theme (default) */
-      --viewer-bg:#ffffff;
-      --text-4:rgba(0,0,0,0.4);
-      --text-5:rgba(0,0,0,0.25);
-      --accent:rgba(0,0,0,0.85);       /* identity title — dark on white */
-
-      /* cadence TokenLab control palette (light) — cadence/src/tokens/color.css */
-      --color-bg:#f5f5f5;
-      --color-surface:#1a1a1a;        --color-surface-hover:#333333;
-      --color-surface-raised:#ffffff; --color-surface-active:#ebebeb;
-      --color-border:#e2e2e2;         --color-border2:#cccccc;
-      --color-text-primary:#ffffff;   --color-text-base:#1a1a1a;
-      --color-text-muted:#666666;     --color-text-muted2:#888888;
-      --color-accent:#5a4fcf;
-    }
-    :root.dark-mode {
+      /* dark theme is the DEFAULT — it matches the dark p5 art (background(0,0,8)), so the
+         chrome boots dark with no JS, param, or postMessage (mirrors BLOCK & LINE, whose
+         default :root matches its paper art). Light is the opt-in (.light-mode) below. */
       --viewer-bg:#141414;             /* = p5 background(0,0,8) → seamless with the art */
       --text-4:rgba(255,255,255,0.4);
       --text-5:rgba(255,255,255,0.25);
@@ -98,13 +89,27 @@
       --color-text-muted:#909090;     --color-text-muted2:#aaaaaa;
       --color-accent:#76c17d;
     }
+    :root.light-mode {
+      --viewer-bg:#ffffff;
+      --text-4:rgba(0,0,0,0.4);
+      --text-5:rgba(0,0,0,0.25);
+      --accent:rgba(0,0,0,0.85);       /* identity title — dark on white */
+
+      /* cadence TokenLab control palette (light) — cadence/src/tokens/color.css */
+      --color-bg:#f5f5f5;
+      --color-surface:#1a1a1a;        --color-surface-hover:#333333;
+      --color-surface-raised:#ffffff; --color-surface-active:#ebebeb;
+      --color-border:#e2e2e2;         --color-border2:#cccccc;
+      --color-text-primary:#ffffff;   --color-text-base:#1a1a1a;
+      --color-text-muted:#666666;     --color-text-muted2:#888888;
+      --color-accent:#5a4fcf;
+    }
 
     html, body {
       background:var(--viewer-bg); min-height:100vh;
       display:flex; flex-direction:column;
       align-items:center; justify-content:center;
       padding:24px; font-family:var(--font-mono); color:var(--color-text-base);
-      transition:background-color .2s ease, color .2s ease;
     }
     /* override the shared centering: Layout B is a full-width two-column app */
     html, body { align-items:stretch; }
