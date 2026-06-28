@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>pokédex viewer</title>
 
+  <!-- ============================================================
+       pokedex_viewer_v3.html — Layout B (left control sidebar)
+       Everything in v2 (theme flip, IBM Plex Mono, pixelDensity(2)=1000px,
+       date/time PNG stamp, ?embed=1), plus:
+       • Left sidebar — identity · date/time · 6 generative param sliders ·
+         randomize/reset/export. Art fills the stage. Stacks below 680px.
+       • Controls match cadence TokenLab styling — the cadence color palette
+         (cadence/src/tokens/color.css) is mapped into the theme blocks;
+         thin 4px sliders with round thumbs, bordered pill buttons, and a
+         filled primary export button.
+       • Param sliders write straight into `params`: 'input' updates the live
+         value, 'change' (release) triggers one rebuild. Synced to the rolled
+         values on load, on canvas click, and on randomize.
+       • Randomize now varies the pokémon (random date) + time of day + params.
+       • Reset returns to the present moment (clears the mock clock).
+       • Instruction line sits under the type in the sidebar.
+       See CHANGES.md in this folder for the full rundown.
+       ============================================================ -->
+
   <!-- ── Theme init (runs before first paint to avoid a flash) ──
        MUST stay the first thing in <head>, ABOVE the font <link> below. A
        stylesheet <link> blocks the next inline <script> from executing until
