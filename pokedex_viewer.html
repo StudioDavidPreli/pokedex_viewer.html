@@ -44,14 +44,22 @@
     var root = document.documentElement, explicit = false;
     var mq = window.matchMedia('(prefers-color-scheme: dark)');
     function apply(t){ root.classList.toggle('dark-mode', t === 'dark'); }
-    var p = new URLSearchParams(location.search), q = p.get('theme');
-    if(q === 'dark' || q === 'light'){ explicit = true; apply(q); }
-    else { apply(mq.matches ? 'dark' : 'light'); }
-    mq.addEventListener('change', function(e){ if(!explicit) apply(e.matches ? 'dark' : 'light'); });
-    window.addEventListener('message', function(ev){
-      var d = ev.data;
-      if(d && (d.theme === 'dark' || d.theme === 'light')){ explicit = true; apply(d.theme); }
-    });
+    var p = new URLSearchParams(location.search), q = p.get('theme'), pin = p.get('pin');
+    if(pin === 'dark' || pin === 'light'){
+      // Pinned: theme-invariant. Apply once before paint and attach NO theme
+      // listeners, so ?theme=, OS preference, and postMessage are all ignored.
+      // The feed tile pins dark so its margin matches the always-dark canvas and
+      // cannot flash; the standalone tool carries no pin and stays fully themed.
+      apply(pin);
+    } else {
+      if(q === 'dark' || q === 'light'){ explicit = true; apply(q); }
+      else { apply(mq.matches ? 'dark' : 'light'); }
+      mq.addEventListener('change', function(e){ if(!explicit) apply(e.matches ? 'dark' : 'light'); });
+      window.addEventListener('message', function(ev){
+        var d = ev.data;
+        if(d && (d.theme === 'dark' || d.theme === 'light')){ explicit = true; apply(d.theme); }
+      });
+    }
     if(p.get('embed') === '1'){
       document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('embed'); });
     }
