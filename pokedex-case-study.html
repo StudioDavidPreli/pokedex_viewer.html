@@ -419,7 +419,7 @@ code .nm  { color: var(--accent3); }
 
     <p class="lede">The SVGs are not decoration. They are the skeleton the engine builds around.</p>
 
-    <p>The original illustrations were drawn as clean, flat SVGs — one per Pokémon, each a silhouette with enough definition to be readable at small sizes. When the engine loads one, it rasterizes it to a 500×500 pixel canvas and runs a pixel-level analysis. Every edge pixel gets a normal vector computed via a Sobel operator. Every edge pixel also gets a thickness measurement — a ray cast inward to find out how deep the body is at that point. Thin areas like ears and tails get sparse, fine marks. Wide areas like the torso get dense layered growth.</p>
+    <p>The original illustrations were drawn as clean, flat SVGs, one per Pokémon, each a silhouette with enough definition to be readable at small sizes. When the engine loads one, it rasterizes it to a 500×500 pixel canvas and runs a pixel-level analysis. Every edge pixel gets a normal vector computed via a Sobel operator. Every edge pixel also gets a thickness measurement: a ray cast inward to find out how deep the body is at that point. Thin areas like ears and tails get sparse, fine marks. Wide areas like the torso get dense layered growth.</p>
 
     <h3>Original illustrations</h3>
     <div class="svg-grid">
@@ -499,7 +499,7 @@ code .nm  { color: var(--accent3); }
             <span class="tool-pill red">JavaScript</span>
             <span class="tool-pill red">Linear interpolation</span>
           </div>
-          <p>151 Pokémon distributed across 366 days using a simple linear formula. Day 0 is Bulbasaur. Day 365 is Mew. The lookup runs in the browser on every page load — no server call, no database. The viewer also has a date and time picker so you can move anywhere in the year and see what that moment looks like.</p>
+          <p>151 Pokémon distributed across 366 days using a simple linear formula. Day 0 is Bulbasaur. Day 365 is Mew. The lookup runs in the browser on every page load: no server call, no database. The viewer also has a date and time picker so you can move anywhere in the year and see what that moment looks like.</p>
           <div class="code-block"><code><span class="kw">var</span> dayOffset = Math.floor((d.getTime() - START_MS) / <span class="nm">86400000</span>);
 <span class="kw">var</span> num = Math.min(<span class="nm">151</span>, Math.floor(dayOffset * <span class="nm">150</span> / <span class="nm">365</span>) + <span class="nm">1</span>);</code></div>
         </div>
@@ -534,7 +534,7 @@ code .nm  { color: var(--accent3); }
             <span class="tool-pill purple">getMoon()</span>
             <span class="tool-pill purple">getDrift()</span>
           </div>
-          <p>Four functions read the current moment and return values the renderer uses directly. <code>getHours()</code> returns fractional hours including minutes and seconds — this drives color temperature and bug population. <code>getAnnualData()</code> returns the day of year, a seasonal multiplier (peaks in summer, drops in winter), and an annual hue shift tied to a sine curve. <code>getMoon()</code> calculates lunar phase from a known epoch and returns a 0–1 factor that scales leaf density. <code>getDrift()</code> is a composite of time and season that controls overall animation energy.</p>
+          <p>Four functions read the current moment and return values the renderer uses directly. <code>getHours()</code> returns fractional hours including minutes and seconds. This drives color temperature and bug population. <code>getAnnualData()</code> returns the day of year, a seasonal multiplier (peaks in summer, drops in winter), and an annual hue shift tied to a sine curve. <code>getMoon()</code> calculates lunar phase from a known epoch and returns a 0–1 factor that scales leaf density. <code>getDrift()</code> is a composite of time and season that controls overall animation energy.</p>
           <p>All four route through a <code>_now()</code> wrapper instead of calling <code>new Date()</code> directly. When the picker is in use, <code>_mockDate</code> overrides the real clock. Every downstream calculation responds instantly.</p>
         </div>
       </div>
@@ -552,7 +552,7 @@ code .nm  { color: var(--accent3); }
             <span class="tool-pill amber">Bézier curves</span>
             <span class="tool-pill amber">mulberry32 PRNG</span>
           </div>
-          <p>Two leaf populations grow from the edge data — one for each of the Pokémon's types. Type 1 leaves grow outward along the surface normals. Type 2 leaves grow inward. Each leaf is a Bézier curve with hue derived from the type color table, shifted by season and time of day. Length, width, and density are all modulated by the moon factor, the season multiplier, and the local body thickness measured in step 2. A separate winter mark set thins out as summer approaches and fills in as it recedes.</p>
+          <p>Two leaf populations grow from the edge data, one for each of the Pokémon's types. Type 1 leaves grow outward along the surface normals. Type 2 leaves grow inward. Each leaf is a Bézier curve with hue derived from the type color table, shifted by season and time of day. Length, width, and density are all modulated by the moon factor, the season multiplier, and the local body thickness measured in step 2. A separate winter mark set thins out as summer approaches and fills in as it recedes.</p>
           <p>The topo background is a multi-pass Perlin noise field rendered before the leaves. Each Pokémon name is hashed to seed a <code>mulberry32</code> PRNG, so the same name always produces the same noise field. The only variation between two renders of the same Pokémon is wall-clock time.</p>
         </div>
       </div>
@@ -568,7 +568,7 @@ code .nm  { color: var(--accent3); }
             <span class="tool-pill amber">p5.js draw()</span>
             <span class="tool-pill amber">22fps</span>
           </div>
-          <p>The engine runs at 22fps. Each frame restores a static background image captured after the topo pass, then advances a 0–1 animation clock and redraws every leaf at a position offset by a sine function seeded with that leaf's own noise value. Each leaf oscillates on its own phase. The result looks like breathing rather than animation — everything moves but nothing goes anywhere. Click the canvas to reposition the silhouette and randomize all parameters. Scroll to zoom.</p>
+          <p>The engine runs at 22fps. Each frame restores a static background image captured after the topo pass, then advances a 0–1 animation clock and redraws every leaf at a position offset by a sine function seeded with that leaf's own noise value. Each leaf oscillates on its own phase. The result looks like breathing rather than animation: everything moves but nothing goes anywhere. Click the canvas to reposition the silhouette and randomize all parameters. Scroll to zoom.</p>
         </div>
       </div>
 
@@ -602,13 +602,42 @@ code .nm  { color: var(--accent3); }
 
     <p>The viewer is a single self-contained HTML file. It loads p5.js from a CDN, fetches SVGs from GitHub, and runs entirely in the browser. There is no framework, no bundler, no server. The whole thing weighs about 58KB before the p5 library.</p>
 
-    <p>Hosting on GitHub Pages meant the SVG repository and the viewer could live side by side. The viewer fetches from <code>raw.githubusercontent.com</code> — a direct CDN link to whatever is in the repo at that moment. Adding a new SVG to the repo makes it immediately available to the viewer without any other change.</p>
+    <p>Hosting on GitHub Pages meant the SVG repository and the viewer could live side by side. The viewer fetches from <code>raw.githubusercontent.com</code>, a direct CDN link to whatever is in the repo at that moment. Adding a new SVG to the repo makes it immediately available to the viewer without any other change.</p>
 
-    <h3>Embedding on Cargo</h3>
-    <p>The viewer is embedded in the portfolio site via iframe. Cross-origin iframe height reporting uses <code>postMessage</code> — the viewer measures its own content height after the SVG loads and sends that value to the parent page, which resizes the iframe to match. A 50ms debounce prevents the resize from triggering Cargo's ResizeObserver in a loop.</p>
+    <h3>Embedding on the site</h3>
+    <p>The portfolio is built in Astro and deployed to Cloudflare Pages. It embeds the viewer cross-origin in an iframe, and a cross-origin host cannot reach into the document to measure it. So the host sizes the frame itself instead of asking the viewer how tall it is. The home feed gives the tile the poster's aspect ratio. The case-study overlay gives it a fixed panel at <code>88vh</code>. Either way <code>scrolling="no"</code> clips the sketch's own overflow, and the iframe loads with <code>loading="lazy"</code> so the p5 runtime holds off until the piece is near the viewport.</p>
+    <p>The viewer is a dark piece, so the iframe is created with <code>color-scheme: dark</code>. That hands the cross-origin document a dark UA backdrop and kills the white flash that used to show while it fetched, before its own theme logic ran. The frame stays hidden until its <code>load</code> event fires, then reveals in one step.</p>
 
     <h3>The mock clock</h3>
-    <p>All time-sensitive functions route through <code>_now()</code> rather than calling <code>new Date()</code> directly. When the picker is in use, <code>_mockDate</code> overrides the real clock and every downstream calculation — season, moon phase, hour, drift — responds to the selected moment instead of the current one. Setting <code>_mockDate</code> back to <code>null</code> returns the piece to live time.</p>
+    <p>All time-sensitive functions route through <code>_now()</code> rather than calling <code>new Date()</code> directly. When the picker is in use, <code>_mockDate</code> overrides the real clock and every downstream calculation responds to the selected moment instead of the current one: season, moon phase, hour, drift. Setting <code>_mockDate</code> back to <code>null</code> returns the piece to live time.</p>
+  </section>
+
+  <!-- ── THE GENERATOR ── -->
+  <section class="section">
+    <div class="sec-label"><span class="sec-num">06</span>The generator</div>
+    <h2>The same dials, in your hands</h2>
+
+    <p class="lede">The calendar reads the clock for you. The generator hands you the clock.</p>
+
+    <p>The viewer at the top of this page shows what this moment looks like and nothing else. The full generator at <a href="https://davidpreli.com/tools/pokedex" target="_blank">davidpreli.com/tools/pokedex</a> puts the engine on a control panel. The six values the clock was quietly setting all year sit on sliders down the left side, and they are yours to move.</p>
+
+    <p>Leaves and leaf size decide how much grows off the silhouette and how big each mark runs. Winter thins or floods the cold-weather marks the season usually governs on its own. Topo, contrast, and detail shape the Perlin field underneath the growth. Push leaves to 6 and the body vanishes under its own garden. Pull winter up in the middle of July and you get a summer Pokémon caught in a frost it has no business having.</p>
+
+    <p>Randomize rerolls every slider at once. Reset hands the controls back to the clock. Export png writes the current frame to disk, the one render out of the whole year you decided to keep.</p>
+
+    <div class="tool-embed">
+      <div class="tool-embed-label">Pokédex generator — live</div>
+      <iframe
+        src="https://studiodavidpreli.github.io/pokedex_viewer.html/pokedex_viewer_v3.html"
+        title="Pokédex generator"
+        scrolling="no"
+        loading="lazy"
+        allow="fullscreen"
+        style="height: 640px;">
+      </iframe>
+    </div>
+
+    <p>Move the date to the night you were born. Turn the leaves up until the face is gone. Export it. That render does not exist anywhere else, and now it sits in your downloads folder.</p>
   </section>
 
   <!-- ── FOOTER ── -->
