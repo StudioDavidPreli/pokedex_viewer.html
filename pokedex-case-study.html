@@ -311,6 +311,11 @@ a:hover { text-decoration: underline; }
   width: 100%;
   border: 0;
   height: 600px;
+  /* The viewer is a dark piece. color-scheme:dark on the iframe element itself gives
+     it a dark UA backdrop instead of white, so the empty frame does not flash while
+     the cross-origin viewer fetches (inherited :root scheme does not reliably reach a
+     cross-origin child's backdrop; set it on the element, as the home-feed embed does). */
+  color-scheme: dark;
 }
 
 /* ── Code block ── */
@@ -665,6 +670,18 @@ window.addEventListener('load', reportHeight);
 setTimeout(reportHeight, 500);
 setTimeout(reportHeight, 1500);
 setTimeout(reportHeight, 4000);
+
+// Reveal-on-load for the embedded viewers: hold each frame hidden over the dark
+// .tool-embed box until its own load fires, then reveal in one step. Without this the
+// booting cross-origin frame is on screen the whole fetch and flashes. JS sets the
+// hide so a no-JS visitor still sees the frame (matches the home-feed P5Embed pattern).
+document.querySelectorAll('.tool-embed iframe').forEach(function (f) {
+  f.style.visibility = 'hidden';
+  f.addEventListener('load', function () {
+    f.style.visibility = 'visible';
+    reportHeight();
+  });
+});
 </script>
 </body>
 </html>
