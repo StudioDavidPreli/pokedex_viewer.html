@@ -318,6 +318,22 @@ a:hover { text-decoration: underline; }
   color-scheme: dark;
 }
 
+/* The v3 generator (panel + canvas). On a wide frame it lays the slider panel beside
+   the canvas and the whole piece fits 640px. Below ~685px of frame width it stacks the
+   panel ABOVE a near-full-width SQUARE canvas, so the content grows to ~800-1090px and
+   a fixed 640px clips the canvas bottom. Cross-origin means the host must size the
+   frame (it cannot measure the viewer), so size the stacked frame off the frame's own
+   width, which here equals the viewport minus the .page padding. The vw constants fit
+   the viewer's measured stacked height; the floor covers the narrowest phones, where
+   the panel wraps to extra rows instead of the canvas shrinking further. */
+.tool-embed--generator iframe { height: 640px; }
+@media (max-width: 740px) {
+  .tool-embed--generator iframe { height: calc(95vw + 440px); }
+}
+@media (max-width: 580px) {
+  .tool-embed--generator iframe { height: max(870px, calc(58vw + 680px)); }
+}
+
 /* ── Code block ── */
 .code-block {
   background: var(--panel);
@@ -631,15 +647,14 @@ code .nm  { color: var(--accent3); }
 
     <p>Randomize rerolls every slider at once. Reset hands the controls back to the clock. Export png writes the current frame to disk, the one render out of the whole year you decided to keep.</p>
 
-    <div class="tool-embed">
+    <div class="tool-embed tool-embed--generator">
       <div class="tool-embed-label">Pokédex generator: live</div>
       <iframe
         src="https://studiodavidpreli.github.io/pokedex_viewer.html/pokedex_viewer_v3.html"
         title="Pokédex generator"
         scrolling="no"
         loading="lazy"
-        allow="fullscreen"
-        style="height: 640px;">
+        allow="fullscreen">
       </iframe>
     </div>
 
